@@ -1,0 +1,41 @@
+import request from '@/utils/request'
+
+export function create{{.table.tableName | Pascal}}(data) {
+    return request({
+        url: '/{{.table.tableName | Dash}}/create-{{.table.tableName | Dash}}',
+        method: 'post',
+        data
+    })
+}
+
+export function delete{{.table.tableName | Pascal}}(data) {
+    return request({
+        url: '/{{.table.tableName | Dash}}/delete-{{.table.tableName | Dash}}',
+        method: 'post',
+        data
+    })
+}
+
+export function update{{.table.tableName | Pascal}}(data) {
+    return request({
+        url: '/{{.table.tableName | Dash}}/update-{{.table.tableName | Dash}}',
+        method: 'post',
+        data
+    })
+}
+
+export function find{{.table.tableName | Pascal}}(data) {
+    return request({
+        url: '/{{.table.tableName | Dash}}/find-{{.table.tableName | Dash}}',
+        method: 'post',
+        data
+    })
+}
+
+export function find{{.table.tableName | Pascal}}List(data) {
+    return request({
+        url: '/{{.table.tableName | Dash}}/find-{{.table.tableName | Dash}}-list',
+        method: 'post',
+        data
+    })
+}

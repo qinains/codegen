@@ -1,3 +1,7 @@
+configs/configs.json
+dist
+codegen
+
 # Binaries for programs and plugins
 *.exe
 *.exe~
