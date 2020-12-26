@@ -1,12 +1,40 @@
 # codegen是什么
-codegen是一款根据sql生成项目代码工具
+codegen是一款根据sql生成项目代码的工具
+
+## 使用
+### 直接使用
+```
+git clone https://github.com/qinains/codegen.git
+cd codegen
+cp configs/configs-example.json configs/configs.json
+# 编辑 configs/configs.json 中的数据库配置等信息
+go run main.go
+# 在 dist/ 文件夹中生成对应文件
+```
+
+### 在项目中使用
+```
+go get -u github.com/qinains/codegen
+# 在项目中创建如 codegen/ 的文件夹，结构如下
+# project
+# └── codegen
+#     ├── configs/configs.json
+#     └── template
+#         └── default
+#             ├── api
+#             ├── ...
+#             ...
+cd project/codegen
+codegen
+# 在 dist/ 文件夹中生成对应文件
+```
 
 ## 功能特点
 1. 可对项目文件夹进行配置
 2. 可编写模板
 
 ## 配置
-配置文件位于configs/configs.json中，其中
+配置文件位于 configs/configs.json 文件中，其中
 ```
 ModuleName          模块名，比如 example、github.com/qinains/example
 TemplateDir         模板目录，比如 tamplate
@@ -19,10 +47,13 @@ BreakerWords        注释断开词，取断点前的字符串，如：创建时
 InitialismWords     通用字，将转化为大写，比如 id -> ID, ip -> IP
 ```
 
-## 模板引擎说明
-参考[https://golang.google.cn/pkg/text/template/](https://golang.google.cn/pkg/text/template/)
+## 模板编写
+默认模板位于 template/default/ 文件夹中，可通过配置文件中的"TemplateDir"配置项修改为其他值
 
-## 可用变量
+### 模板引擎说明
+参考 [https://golang.google.cn/pkg/text/template/](https://golang.google.cn/pkg/text/template/)
+
+### 可用变量
 ```
 .moduleName 模块名
 .table 表
@@ -46,10 +77,10 @@ InitialismWords     通用字，将转化为大写，比如 id -> ID, ip -> IP
     [].table 以上定义的"表"数组
 ```
 
-## 文件夹编写说明
+### 文件夹编写说明
 因为Windows系统文件名中不能包含`|`字符，当遇到使用过滤器文件名的情况，用`__vertical_bar__`代替`|`
 
-## 可使用过滤器和函数
+### 可使用过滤器和函数
 字符串过滤器
 ```
 Upper	                    都转大写 如：user_id -> USER_ID

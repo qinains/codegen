@@ -1,0 +1,75 @@
+package service
+
+import (
+"{{$.moduleName}}/pkg/config"
+"{{$.moduleName}}/pkg/do"
+"{{$.moduleName}}/pkg/dto"
+)
+
+// Create{{.table.tableName | Pascal}} 创建{{.table.tableComment | Breaker}}
+func Create{{.table.tableName | Pascal}}({{.table.tableName | Camel}} *do.{{.table.tableName | Pascal}}) error {
+    result := config.DB.Create(&{{.table.tableName | Camel}})
+    return result.Error
+}
+
+// Delete{{.table.tableName | Pascal}} 删除{{.table.tableComment | Breaker}}
+func Delete{{.table.tableName | Pascal}}(IDList []int64) (int64, error) {
+    result := config.DB.Delete(&do.{{.table.tableName | Pascal}}{}, IDList)
+    return result.RowsAffected, result.Error
+}
+
+// Update{{.table.tableName | Pascal}} 更新{{.table.tableComment | Breaker}}
+func Update{{.table.tableName | Pascal}}({{.table.tableName | Camel}} *do.{{.table.tableName | Pascal}}) (int64, error) {
+    result := config.DB.Save(&{{.table.tableName | Camel}})
+    return result.RowsAffected, result.Error
+}
+
+// Find{{.table.tableName | Pascal}} {{.table.tableComment | Breaker}}详情
+func Find{{.table.tableName | Pascal}}(ID int64) (do.{{.table.tableName | Pascal}}, error) {
+    var {{.table.tableName | Camel}} do.{{.table.tableName | Pascal}}
+    result := config.DB.First(&{{.table.tableName | Camel}}, ID)
+    return {{.table.tableName | Camel}}, result.Error
+}
+
+// Find{{.table.tableName | Pascal}}List {{.table.tableComment | Breaker}}列表
+func Find{{.table.tableName | Pascal}}List({{.table.tableName | Camel}}Form dto.{{.table.tableName | Pascal}}Form) ({{.table.tableName | Camel}}List []*do.{{.table.tableName | Pascal}}, total int64, err error) {
+    switch {{$.table.tableName | Camel}}Form.Sort {
+    default:
+    {{$.table.tableName | Camel}}Form.Sort = "{{$.table.tableName}}.id desc"
+    {{range $k,$v := .table.columns -}}
+        case "{{$v.columnName | Pascal}}":
+        {{$.table.tableName | Camel}}Form.Sort = "{{$.table.tableName}}.{{$v.columnName}}"
+        case "{{$v.columnName | Pascal}} desc":
+        {{$.table.tableName | Camel}}Form.Sort = "{{$.table.tableName}}.{{$v.columnName}} desc"
+    {{end -}}
+    }
+    sql := config.DB.Offset({{.table.tableName | Camel}}Form.Offset()).Limit({{.table.tableName | Camel}}Form.Size).Order({{.table.tableName | Camel}}Form.Sort)
+
+    {{- range $k,$v := .table.columns -}}
+        {{- if or (Contains $v.columnName "id") (Contains $v.columnName "status")}}
+            if {{$.table.tableName | Camel}}Form.{{$v.columnName | Pascal}} {{if IsStringDataType $v.dataType}}!= ""{{else}}> 0{{end}} {
+            sql = sql.Where("{{$.table.tableName}}.{{$v.columnName}} = ?", {{$.table.tableName | Camel}}Form.{{$v.columnName | Pascal}})
+            }
+            if len({{$.table.tableName | Camel}}Form.{{$v.columnName | Pascal}}List) > 1 {
+            sql = sql.Where("{{$.table.tableName}}.{{$v.columnName}} in (?)", {{$.table.tableName | Camel}}Form.{{$v.columnName | Pascal}}List)
+            }
+        {{- else if Contains $v.columnName "_time"}}
+            if len({{$.table.tableName | Camel}}Form.{{$v.columnName | Pascal}}) > 1 {
+            sql = sql.Where("{{$.table.tableName}}.{{$v.columnName}} > ? and {{$.table.tableName}}.{{$v.columnName}} <= ? ", {{$.table.tableName | Camel}}Form.{{$v.columnName | Pascal}}[0], {{$.table.tableName | Camel}}Form.{{$v.columnName | Pascal}}[1])
+            }
+        {{- else if IsStringDataType $v.dataType}}
+            if {{$.table.tableName | Camel}}Form.{{$v.columnName | Pascal}} != "" {
+            sql = sql.Where("{{$.table.tableName}}.{{$v.columnName}} like ?", "%"+{{$.table.tableName | Camel}}Form.{{$v.columnName | Pascal}}+"%")
+            }
+        {{- else if Contains $v.columnName "sort" -}}
+        {{- else }}
+            if {{$.table.tableName | Camel}}Form.{{$v.columnName | Pascal}} >0 {
+            sql = sql.Where("{{$.table.tableName}}.{{$v.columnName}} = ?", {{$.table.tableName | Camel}}Form.{{$v.columnName | Pascal}})
+            }
+        {{- end -}}
+    {{end}}
+
+    result := sql.Find(&{{.table.tableName | Camel}}List).Offset(-1).Limit(-1).Count(&total)
+    err = result.Error
+    return
+}

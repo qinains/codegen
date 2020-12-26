@@ -1,0 +1,150 @@
+package web
+
+import (
+    "github.com/gin-gonic/gin"
+    "{{$.moduleName}}/pkg/do"
+    "{{$.moduleName}}/pkg/dto"
+    "{{$.moduleName}}/pkg/service"
+    "{{$.moduleName}}/pkg/util"
+    "strings"
+)
+
+// Create{{.table.tableName | Pascal}} 创建{{.table.tableComment | Breaker}}
+// @Summary 创建{{.table.tableComment | Breaker}}
+// @Tags {{.table.tableComment | Breaker}}
+// @Accept json
+// @Produce json
+// @Param X-Token header string true "Token信息" default(abc123)
+// @Param json body do.{{.table.tableName | Pascal}} true "{{.table.tableComment | Breaker}}"
+// @Success 200 {object} util.Response{Data=do.{{.table.tableName | Pascal}}} "{{.table.tableComment | Breaker}}"
+// @Failure 400
+// @Security ApiKeyAuth
+// @Security OAuth2Implicit[admin, user]
+// @Router /{{.table.tableName | Dash}}/create-{{.table.tableName | Dash}} [post]
+func Create{{.table.tableName | Pascal}}(c *gin.Context) {
+    var {{.table.tableName | Camel}} *do.{{.table.tableName | Pascal}}
+    if err := c.ShouldBind(&{{.table.tableName | Camel}}); err != nil {
+    // todo 优化输出
+    util.ErrorForm(c, err.Error())
+        return
+    }
+
+    if err := service.Create{{.table.tableName | Pascal}}({{.table.tableName | Camel}}); err != nil {
+        if strings.Contains(err.Error(), "Duplicate entry") {
+            util.ErrorBusiness(c, "{{.table.tableComment | Breaker}}已经存在")
+            return
+        }
+        util.ErrorForm(c, err.Error())
+        return
+    }
+    util.OK(c, "", {{.table.tableName | Camel}})
+}
+
+// Delete{{.table.tableName | Pascal}} 删除{{.table.tableComment | Breaker}}
+// @Summary 删除{{.table.tableComment | Breaker}}
+// @Tags {{.table.tableComment | Breaker}}
+// @Accept json
+// @Produce json
+// @Param X-Token header string true "Token信息" default(abc123)
+// @Param json body dto.{{.table.tableName | Pascal}}Form true "ID列表" example {"IDList[]": [1,2]}
+// @Success 200 {object} util.Response "通用返回，Code==20000表示删除成功"
+// @Failure 400
+// @Security ApiKeyAuth
+// @Security OAuth2Implicit[admin, user]
+// @Router /{{.table.tableName | Dash}}/delete-{{.table.tableName | Dash}} [post]
+func Delete{{.table.tableName | Pascal}}(c *gin.Context) {
+    var {{.table.tableName | Camel}}Form dto.{{.table.tableName | Pascal}}Form
+    if err := c.ShouldBind(&{{.table.tableName | Camel}}Form); err != nil {
+        // todo 优化输出
+        util.ErrorForm(c, err.Error())
+        return
+    }
+
+    if _, err := service.Delete{{.table.tableName | Pascal}}({{.table.tableName | Camel}}Form.IDList); err != nil {
+        util.ErrorForm(c, err.Error())
+        return
+    }
+    util.OK(c, "", nil)
+}
+
+// Update{{.table.tableName | Pascal}} 更新{{.table.tableComment | Breaker}}
+// @Summary 更新{{.table.tableComment | Breaker}}
+// @Tags {{.table.tableComment | Breaker}}
+// @Accept json
+// @Produce json
+// @Param X-Token header string true "Token信息" default(abc123)
+// @Param json body do.{{.table.tableName | Pascal}} true "{{.table.tableComment | Breaker}}"
+// @Success 200 {object} util.Response{Data=do.{{.table.tableName | Pascal}}} "{{.table.tableComment | Breaker}}"
+// @Failure 400
+// @Security ApiKeyAuth
+// @Security OAuth2Implicit[admin, user]
+// @Router /{{.table.tableName | Dash}}/update-{{.table.tableName | Dash}} [post]
+func Update{{.table.tableName | Pascal}}(c *gin.Context) {
+    var {{.table.tableName | Camel}} *do.{{.table.tableName | Pascal}}
+    if err := c.ShouldBind(&{{.table.tableName | Camel}}); err != nil {
+        // todo 优化输出
+        util.ErrorForm(c, err.Error())
+        return
+    }
+
+    if _, err := service.Update{{.table.tableName | Pascal}}({{.table.tableName | Camel}}); err != nil {
+        util.ErrorForm(c, err.Error())
+        return
+    }
+    util.OK(c, "", {{.table.tableName | Camel}})
+}
+
+// Find{{.table.tableName | Pascal}} {{.table.tableComment | Breaker}}详情
+// @Summary {{.table.tableComment | Breaker}}详情
+// @Tags {{.table.tableComment | Breaker}}
+// @Accept json
+// @Produce json
+// @Param X-Token header string true "Token信息" default(abc123)
+// @Param json body do.{{.table.tableName | Pascal}} true "{{.table.tableComment | Breaker}}ID，比如{ID:1}"
+// @Success 200 {object} util.Response{Data=do.{{.table.tableName | Pascal}}} "通用返回"
+// @Failure 400
+// @Security ApiKeyAuth
+// @Security OAuth2Implicit[admin, user]
+// @Router /{{.table.tableName | Dash}}/find-{{.table.tableName | Dash}} [post]
+func Find{{.table.tableName | Pascal}}(c *gin.Context) {
+    var {{.table.tableName | Camel}} do.{{.table.tableName | Pascal}}
+    if err := c.ShouldBind(&{{.table.tableName | Camel}}); err != nil {
+        util.ErrorForm(c, err.Error())
+        return
+    }
+
+    {{.table.tableName | Camel}}, err := service.Find{{.table.tableName | Pascal}}({{.table.tableName | Camel}}.ID)
+    if err != nil {
+        util.ErrorBusiness(c, err.Error())
+        return
+    }
+    util.OK(c, "", {{.table.tableName | Camel}})
+}
+
+// Find{{.table.tableName | Pascal}}List {{.table.tableComment | Breaker}}列表
+// @Summary {{.table.tableComment | Breaker}}列表
+// @Tags {{.table.tableComment | Breaker}}
+// @Accept json
+// @Produce json
+// @Param X-Token header string true "Token信息" default(abc123)
+// @Param json body dto.{{.table.tableName | Pascal}}Form true "{{.table.tableComment | Breaker}}表单"
+// @Success 200 {object} util.Response{Data=util.List{Items=[]do.{{.table.tableName | Pascal}}}} "{{.table.tableComment | Breaker}}"
+// @Failure 400
+// @Security ApiKeyAuth
+// @Security OAuth2Implicit[admin, user]
+// @Router /{{.table.tableName | Dash}}/find-{{.table.tableName | Dash}}-list [post]
+func Find{{.table.tableName | Pascal}}List(c *gin.Context) {
+    var {{.table.tableName | Camel}}Form dto.{{.table.tableName | Pascal}}Form
+    if err := c.ShouldBind(&{{.table.tableName | Camel}}Form); err != nil {
+        // todo 优化输出
+        util.ErrorForm(c, err.Error())
+        return
+    }
+
+    {{.table.tableName | Camel}}List, total, err := service.Find{{.table.tableName | Pascal}}List({{.table.tableName | Camel}}Form)
+    if err != nil {
+        util.ErrorBusiness(c, err.Error())
+        return
+    }
+    util.OK(c, "", util.List{Total: total, Items: {{.table.tableName | Camel}}List})
+}

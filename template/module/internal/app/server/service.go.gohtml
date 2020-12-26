@@ -1,0 +1,16 @@
+package server
+
+import (
+    "gorm.io/gorm"
+{{range $k0,$table := .tables}}
+    "{{$.moduleName}}/internal/pkg/{{$table.tableName | Dash}}"
+{{- end}}
+)
+
+func ServiceSetup(db *gorm.DB) map[string]interface{} {
+    services := map[string]interface{}{}
+{{- range $k0,$table := .tables}}
+    services["{{$table.tableName | Camel}}Service"] = {{$table.tableName | LowerAll}}.NewService(db) // {{$table.tableComment | Breaker}}服务
+{{- end}}
+    return services
+}

@@ -1,0 +1,27 @@
+{{define "dataType" -}}
+    {{if or (Contains .dataType "bigint") (eq .columnName "id") -}}int64
+    {{- else if Contains .dataType "tinyint"}}int8
+    {{- else if Contains .dataType "int"}}int
+    {{- else if Contains .dataType "varchar"}}string
+    {{- else if Contains .dataType "decimal"}}{{if IsGE .numericPrecision 18}}float64{{else}}float32{{end}}
+    {{- else if Contains .dataType "text"}}string
+    {{- end}}
+{{- end -}}
+package do
+
+// {{.table.tableName | Pascal}} {{.table.tableComment}}
+type {{.table.tableName | Pascal}} struct {
+{{- range $k,$v := .table.columns}}
+    {{$v.columnName | Pascal}} {{template "dataType" $v}} `gorm:"type:{{$v.columnType | Upper}};
+    {{- if eq $v.columnKey "PRI"}}primaryKey;
+    {{- else if eq $v.columnKey "UNI"}}uniqueIndex;
+    {{- else if eq $v.columnKey "MUL"}}index;
+    {{- end -}}
+    {{- if eq $v.extra "auto_increment"}}autoIncrement;{{end -}}
+    {{- if eq $v.isNullable "NO"}}not null;{{end -}}
+    {{- if eq $v.columnName "create_time"}}autoCreateTime:milli;
+    {{- else if eq $v.columnName "update_time"}}autoUpdateTime:milli;
+    {{- else if IsNotNil $v.columnDefault}}default:{{$v.columnDefault}};
+    {{- end -}}
+    comment:{{$v.columnComment}}"` // {{$v.columnComment}}{{end}}
+}
