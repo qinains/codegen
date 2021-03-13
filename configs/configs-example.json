@@ -1,4 +1,6 @@
 {
+  "ProjectName": "project",
+  "ProjectDescription": "项目描述",
   "ModuleName": "example.com/qinains/example",
   "TemplateDir": "template/default",
   "DistDir": "dist",
@@ -6,6 +8,11 @@
     "DriverName": "mysql",
     "DataSourceName": "root:root@tcp(127.0.0.1:3306)/example?charset=utf8mb4&parseTime=True&loc=Local"
   },
+  "SkinParseBySuffix": [
+    ".png",
+    ".jpg",
+    ".gif"
+  ],
   "BreakerWords": [
     ",",
     "，",

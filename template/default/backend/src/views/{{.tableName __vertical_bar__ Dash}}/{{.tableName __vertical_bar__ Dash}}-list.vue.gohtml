@@ -1,0 +1,350 @@
+<template>
+  <div class="app-container">
+    <el-form class="filter-container" ref="filterForm" :model="listQuery" :inline="true">
+      {{range $k,$v := .table.columns -}}
+      {{if not (Contains $v.columnName "sort") -}}
+      <el-form-item prop="{{$v.columnName | Camel}}">
+        {{- if Contains $v.columnName "_time"}}
+        <el-date-picker
+          v-model{{if IsNumberDataType $v.dataType}}{{end}}="listQuery.{{$v.columnName | Camel}}"
+          range-separator="至"
+          start-placeholder="{{$v.columnComment | Breaker}}"
+          end-placeholder="{{$v.columnComment | Breaker}}"
+          style="width: 380px;"
+          type="datetimerange"
+          value-format="timestamp"
+          clearable
+          @change="handleFilter"/>
+        {{- else if Contains $v.columnName "status"}}
+        <el-select v-model{{if IsNumberDataType $v.dataType}}{{end}}="listQuery.{{$v.columnName | Camel}}" placeholder="{{$v.columnComment | Breaker}}" style="max-width: 80px" clearable @clear="listQuery.{{$v.columnName | Camel}}=undefined" @change="handleFilter">
+          <el-option v-for="item in {{$.table.tableName | Camel}}StatusDict" :key="item.ID" :label="item.title" :value="parseInt(item.value)" />
+        </el-select>
+        {{- else}}
+        <el-input v-model{{if IsNumberDataType $v.dataType}}.number{{end}}="listQuery.{{$v.columnName | Camel}}" placeholder="{{$v.columnComment | Breaker}}" clearable{{if IsNumberDataType $v.dataType}} @clear="listQuery.{{$v.columnName | Camel}}=undefined"{{end}} style="max-width: 100px" @keyup.enter.native="handleFilter"/>
+        {{- end}}
+      </el-form-item>
+      {{end -}}
+      {{end -}}
+      <el-form-item><el-button v-waves type="primary" icon="el-icon-search" @click="handleFilter">搜索</el-button></el-form-item>
+      <el-form-item><el-button v-waves icon="el-icon-refresh" @click="resetFilter">重置</el-button></el-form-item>
+    </el-form>
+    <el-form class="action-container">
+      <el-form-item>
+        <el-button class="action-item" type="primary" icon="el-icon-plus" @click="handleCreate">添加</el-button>
+        <el-button class="action-item" type="primary" icon="el-icon-edit" :disabled="singleSelected" @click="handleUpdate">修改</el-button>
+        <el-button class="action-item" type="danger" icon="el-icon-delete" :disabled="multipleSelected" @click="handleDelete">删除</el-button>
+      </el-form-item>
+    </el-form>
+
+    <el-table
+      class="data-container"
+      :key="tableKey"
+      v-loading="listLoading"
+      :data="list"
+      stripe
+      fit
+      highlight-current-row
+      style="width: 100%;"
+      @sort-change="sortChange"
+      @selection-change="handleSelectionChange"
+    >
+      <el-table-column align="center" type="selection" :fixed="device==='desktop'?'left':false" width="55"></el-table-column>
+      {{range $k,$v := .table.columns -}}
+      <el-table-column label="{{if (or (eq $v.columnName "id")) }}ID{{else}}{{$v.columnComment | Breaker}}{{end}}" prop="{{$v.columnName | Camel}}"{{if or (eq $v.columnName "id") (Contains $v.columnName "sort")}} sortable="custom"{{end}} align="center"{{if Contains $v.columnName "_time"}} min-width="120"{{end}}>
+        <template slot-scope="{row}">
+          {{- if (or (Contains $v.columnName "_time") (Contains $v.columnName "_at"))}}
+          <span>{{`{{`}}row.{{$v.columnName | Camel}} | parseTime('{y}-{m}-{d} {h}:{i}') {{`}}`}}</span>
+          {{- else if (or (Contains $v.columnName "img_url") (Contains $v.columnName "image_url"))}}
+          <el-image style="width: 60px; height: 60px" :src="row.{{$v.columnName | Camel}}" fit="contain" :lazy="true" :preview-src-list="[row.{{$v.columnName | Camel}}]"></el-image>
+          {{- else if (or (Contains $v.columnName "file_url") (Contains $v.columnName "_url"))}}
+          <el-link :href="row.{{$v.columnName | Camel}}" type="primary" target="_blank">{{`{{`}} row.{{$v.columnName | Camel}} {{`}}`}}</el-link>
+          {{- else if Contains $v.columnName "status"}}
+          <el-tag :type="row.{{$v.columnName | Camel}} | dictFilter({{$.table.tableName | Camel}}StatusDict,'tagType')">{{`{{`}} row.{{$v.columnName | Camel}} | dictFilter({{$.table.tableName | Camel}}StatusDict,'title') {{`}}`}}</el-tag>
+          {{- else}}
+          <span>{{`{{`}}row.{{$v.columnName | Camel}}{{`}}`}}</span>
+          {{- end}}
+        </template>
+      </el-table-column>
+      {{end}}
+      <el-table-column label="操作" align="center" :fixed="device==='desktop'?'right':false" min-width="120">
+        <template slot-scope="{row,$index}">
+          <el-button type="primary" icon="el-icon-edit" size="mini" :plain="true" @click="handleUpdate(row)"></el-button>
+          <el-button type="danger" icon="el-icon-delete" size="mini" :plain="true" @click="handleDelete(row,$index)"></el-button>
+        </template>
+      </el-table-column>
+    </el-table>
+
+    <pagination v-show="total>0" :total="total" :page.sync="listQuery.page" :limit.sync="listQuery.size" @pagination="getList"/>
+
+    <el-dialog :title="textMap[dialogStatus]" :visible.sync="dialogFormVisible" :close-on-click-modal="false">
+      <el-form ref="dataForm" :rules="rules" :model="temp" label-position="right" label-width="auto">
+        {{- range $k,$v := .table.columns}}
+        {{- if (or (Contains $v.columnName "_time") (Contains $v.columnName "_at"))}}
+        <el-form-item label="{{$v.columnComment | Breaker}}" prop="{{$v.columnName | Camel}}">
+          <el-date-picker v-model{{if IsNumberDataType $v.dataType}}.number{{end}}="temp.{{$v.columnName | Camel}}" type="datetime" value-format="timestamp" placeholder="请选择{{$v.columnComment | Breaker}}"/>
+        </el-form-item>
+        {{- else if (or (Contains $v.columnName "img_url") (Contains $v.columnName "image_url"))}}
+        <el-form-item label="{{$v.columnComment | Breaker}}" prop="{{$v.columnName | Camel}}">
+          <el-input v-model="temp.{{$v.columnName | Camel}}" placeholder="请输入图片链接"/>
+          <el-upload
+            name="file[]"
+            :headers="{ 'X-TOKEN': $getAccessToken() }"
+            :action="$getVueAppBaseAPI() + '/file/upload'"
+            :on-success="(response, file, fileList)=>{temp.{{$v.columnName | Camel}}= response.data.items[0].URL.indexOf('http')===0?response.data.items[0].URL:($getVueAppBaseAPI() + response.data.items[0].URL)}"
+            :on-remove="(file, fileList)=>{temp.{{$v.columnName | Camel}}=''}"
+            :on-exceed="(file, fileList)=>{$message({message: '超出文件数量限制，请先删除文件', type: 'warning'})}"
+            :limit="1"
+            list-type="picture"
+            drag
+            multiple>
+            <i class="el-icon-upload"></i>
+            <div class="el-upload__text">或将图片文件拖到此处，或<em>点击上传</em></div>
+            <div class="el-upload__tip" slot="tip">图片文件大小不超过2MB</div>
+          </el-upload>
+        </el-form-item>
+        {{- else if (or (Contains $v.columnName "file_url") (Contains $v.columnName "_url"))}}
+        <el-form-item label="{{$v.columnComment | Breaker}}" prop="{{$v.columnName | Camel}}">
+          <el-input v-model="temp.{{$v.columnName | Camel}}" placeholder="请输入文件链接"/>
+          <el-upload
+            name="file[]"
+            :headers="{ 'X-TOKEN': $getAccessToken() }"
+            :action="$getVueAppBaseAPI() + '/file/upload'"
+            :on-success="(response, file, fileList)=>{temp.{{$v.columnName | Camel}}= response.data.items[0].URL.indexOf('http')===0?response.data.items[0].URL:($getVueAppBaseAPI() + response.data.items[0].URL)}"
+            :on-remove="(file, fileList)=>{temp.{{$v.columnName | Camel}}=''}"
+            :on-exceed="(file, fileList)=>{$message({message: '超出文件数量限制，请先删除文件', type: 'warning'})}"
+            :limit="1"
+            list-type="text"
+            drag
+            multiple>
+            <i class="el-icon-upload"></i>
+            <div class="el-upload__text">或将文件拖到此处，或<em>点击上传</em></div>
+            <div class="el-upload__tip" slot="tip">文件大小不超过2MB</div>
+          </el-upload>
+        </el-form-item>
+        {{- else if Contains $v.columnName "status"}}
+        <el-form-item label="{{$v.columnComment | Breaker}}" prop="{{$v.columnName | Camel}}">
+          <el-radio v-model.number="temp.{{$v.columnName | Camel}}" v-for="item in {{$.table.tableName | Camel}}StatusDict" :key="item.ID" :label="parseInt(item.value)">{{"{{"}}item.title{{"}}"}}</el-radio>
+        </el-form-item>
+        {{- else if (or (Contains $v.columnName "intro") (Contains $v.columnName "description"))}}
+        <el-form-item label="{{$v.columnComment | Breaker}}" prop="{{$v.columnName | Camel}}">
+          <el-input v-model="temp.{{$v.columnName | Camel}}" type="textarea" placeholder="请输入{{$v.columnComment | Breaker}}"/>
+        </el-form-item>
+        {{- else if (or (Contains $v.columnName "content") (Contains $v.columnName "rich_text"))}}
+        <el-form-item label="{{$v.columnComment | Breaker}}" prop="{{$v.columnName | Camel}}">
+          <el-input v-model="temp.{{$v.columnName | Camel}}" type="textarea" rows="16" placeholder="请输入{{$v.columnComment | Breaker}}"/>
+        </el-form-item>
+        {{- else}}
+        <el-form-item label="{{$v.columnComment | Breaker}}" prop="{{$v.columnName | Camel}}">
+          <el-input v-model{{if IsNumberDataType $v.dataType}}.number{{end}}="temp.{{$v.columnName | Camel}}" placeholder="请输入{{$v.columnComment | Breaker}}"/>
+        </el-form-item>
+        {{- end}}
+        {{- end}}
+        <el-form-item v-if="dialogStatus==='create'" label="添加之后">
+          <el-radio v-model="dialogNext" :label="10">关闭窗口</el-radio>
+          <el-radio v-model="dialogNext" :label="20">继续添加</el-radio>
+        </el-form-item>
+        <el-form-item>
+          <el-button type="primary" @click="dialogStatus==='create'?createData():updateData()">
+            确定
+          </el-button>
+          <el-button @click="dialogFormVisible = false">
+            取消
+          </el-button>
+        </el-form-item>
+      </el-form>
+    </el-dialog>
+  </div>
+</template>
+
+<script>
+  import { create{{.table.tableName | Pascal}}, delete{{.table.tableName | Pascal}}, update{{.table.tableName | Pascal}}, find{{.table.tableName | Pascal}}, find{{.table.tableName | Pascal}}List } from '@/api/{{.table.tableName | Dash}}'
+  import waves from '@/directive/waves'
+  import Pagination from '@/components/Pagination'
+  import {mapGetters} from "vuex"
+
+  export default {
+    name: '{{.table.tableName | Pascal}}',
+    components: {Pagination},
+    computed: {
+      ...mapGetters([
+        'device'
+      ])
+    },
+    directives: {waves},
+    filters: {
+    },
+    data() {
+      return {
+        {{$.table.tableName | Camel}}StatusDict: [],
+        tableKey: 0,
+        ids: [],
+        singleSelected: true,
+        multipleSelected: true,
+        list: null,
+        total: 0,
+        listLoading: true,
+        listQuery: {
+          page: 1,
+          size: 20,
+          sort: undefined,
+      {{- range $k,$v := .table.columns -}}
+      {{- if or (Contains $v.columnName "id") (Contains $v.columnName "status")}}
+      {{$v.columnName | Camel}}: undefined,
+      {{$v.columnName | Camel}}List: undefined,
+      {{- else if Contains $v.columnName "_time"}}
+      {{$v.columnName | Camel}}: undefined,
+      {{- else if Contains $v.columnName "sort"}}
+      {{- else}}
+      {{$v.columnName | Camel}}: undefined,
+      {{- end -}}
+      {{end}}
+      },
+      temp: {
+        {{- range $k,$v := .table.columns}}
+        {{$v.columnName | Camel}}: undefined,
+        {{- end}}
+      },
+      dialogFormVisible: false,
+      dialogNext: 10,
+      dialogStatus: '',
+      textMap: {
+        update: '编辑{{.table.tableComment | Breaker}}',
+        create: '添加{{.table.tableComment | Breaker}}'
+      },
+      rules: {
+      },
+      downloadLoading: false
+    }
+    },
+    created() {
+      this.getList()
+      this.$store.dispatch('common/getDict', '{{$.table.tableName | Camel}}Status').then((resp) => {
+        this.{{$.table.tableName | Camel}}StatusDict = resp
+      })
+    },
+    methods: {
+      getList() {
+        this.listLoading = true
+        find{{.table.tableName | Pascal}}List(this.listQuery).then(response => {
+          this.list = response.data.items
+          this.total = response.data.total
+          this.listLoading = false
+        }).catch(() => {
+          this.listLoading = false
+        })
+      },
+      handleFilter() {
+        this.listQuery.page = 1
+        this.getList()
+      },
+      resetFilter() {
+        this.$refs["filterForm"].resetFields()
+        this.getList()
+      },
+      handleModifyStatus(row, status) {
+        this.$message({
+          message: '操作成功',
+          type: 'success'
+        })
+        row.status = status
+      },
+      sortChange(data) {
+        const { prop, order } = data
+        if (order === 'ascending') {
+          this.listQuery.sort = prop
+        } else if (order === 'descending') {
+          this.listQuery.sort = prop + ' desc'
+        } else {
+          this.listQuery.sort = undefined
+        }
+        this.handleFilter()
+      },
+      resetTemp() {
+        this.temp = {
+        {{range $k,$v := .table.columns -}}
+        {{$v.columnName | Camel}}: undefined,
+        {{end -}}
+      }
+      },
+      handleCreate() {
+        this.resetTemp()
+        this.dialogStatus = 'create'
+        this.dialogFormVisible = true
+        this.$nextTick(() => {
+          this.$refs['dataForm'].clearValidate()
+        })
+      },
+      createData() {
+        this.$refs['dataForm'].validate((valid) => {
+          if (valid) {
+            create{{.table.tableName | Pascal}}(this.temp).then((resp) => {
+              this.list.unshift(resp.data)
+              if (this.dialogNext === 10) {
+                this.dialogFormVisible = false
+              }
+              this.$notify({
+                title: '成功',
+                message: '创建成功',
+                type: 'success',
+                duration: 2000
+              })
+            })
+          }
+        })
+      },
+      handleUpdate(row) {
+        const id = row.ID || this.ids[0]
+        find{{.table.tableName | Pascal}}({ID: id}).then(response => {
+          this.temp = response.data
+        })
+        this.dialogStatus = 'update'
+        this.dialogFormVisible = true
+        this.$nextTick(() => {
+          this.$refs['dataForm'].clearValidate()
+        })
+      },
+      updateData() {
+        this.$refs['dataForm'].validate((valid) => {
+          if (valid) {
+            const tempData = Object.assign({}, this.temp)
+            update{{.table.tableName | Pascal}}(tempData).then(() => {
+              const index = this.list.findIndex(v => v.ID === this.temp.ID)
+              this.list.splice(index, 1, this.temp)
+              this.dialogFormVisible = false
+              this.$notify({
+                title: '成功',
+                message: '更新成功',
+                type: 'success',
+                duration: 2000
+              })
+            })
+          }
+        })
+      },
+      handleDelete(row, index) {
+        const ids = row.ID ? [row.ID] : this.ids
+        this.$confirm('是否确认删除编号为"' + ids + '"的数据项?', '警告', {
+          confirmButtonText: '确定',
+          cancelButtonText: '取消',
+          type: 'warning'
+        }).then(function () {
+          return delete{{.table.tableName | Pascal}}({IDList: ids})
+        }).then(() => {
+          this.getList()
+          this.$notify({
+            title: '成功',
+            message: '删除成功',
+            type: 'success',
+            duration: 2000
+          })
+        }).catch(function () {
+        })
+      },
+      handleSelectionChange(selection) {
+        this.ids = selection.map(item => item.ID)
+        this.singleSelected = selection.length !== 1
+        this.multipleSelected = !selection.length
+      },
+    }
+  }
+</script>

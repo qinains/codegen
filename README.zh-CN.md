@@ -36,6 +36,8 @@ codegen
 ## 配置
 配置文件位于 configs/configs.json 文件中，其中
 ```
+ProjectName         项目名，英文，比如 example
+ProjectDescription  项目描述
 ModuleName          模块名，比如 example、github.com/qinains/example
 TemplateDir         模板目录，比如 tamplate
 DistDir             生成代码目录，比如 dist
@@ -55,6 +57,8 @@ InitialismWords     通用字，将转化为大写，比如 id -> ID, ip -> IP
 
 ### 可用变量
 ```
+.projectName 项目名，英文
+.projectDescription 项目描述
 .moduleName 模块名
 .table 表
     .tableName 表名，比如 user_log
@@ -114,3 +118,7 @@ IsNumberDataType str        str对应的sql类型是否是数字型
 IsStringDataType str        str对应的sql类型是否是字符串
 IsReservedWord              str对应的字符串是否是保留字中的字符串
 ```
+
+### FAQ
+1. ".vue" 文件也有 {{}} 模板变量，如何不解析这些变量
+将{{}}添加到{{\`\`}}中，比如将{{item.Name}}修改为{{\`{{item.Name}}\`}}

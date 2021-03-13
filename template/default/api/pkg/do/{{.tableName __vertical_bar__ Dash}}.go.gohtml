@@ -2,17 +2,32 @@
     {{if or (Contains .dataType "bigint") (eq .columnName "id") -}}int64
     {{- else if Contains .dataType "tinyint"}}int8
     {{- else if Contains .dataType "int"}}int
+    {{- else if Contains .columnName "deleted_at"}}*time.Time
+    {{- else if Contains .dataType "timestamp"}}time.Time
     {{- else if Contains .dataType "varchar"}}string
     {{- else if Contains .dataType "decimal"}}{{if IsGE .numericPrecision 18}}float64{{else}}float32{{end}}
     {{- else if Contains .dataType "text"}}string
     {{- end}}
 {{- end -}}
+
+{{$importTime := false}}
+{{- range $k,$v := .table.columns}}
+    {{- if (and (eq $importTime false) (or (Contains $v.columnName "_at") (Contains $v.dataType "timestamp")))}}
+        {{- $importTime = true}}
+    {{- end }}
+{{- end -}}
+
 package do
+{{with $importTime}}
+import (
+    "time"
+)
+{{end}}
 
 // {{.table.tableName | Pascal}} {{.table.tableComment}}
 type {{.table.tableName | Pascal}} struct {
 {{- range $k,$v := .table.columns}}
-    {{$v.columnName | Pascal}} {{template "dataType" $v}} `gorm:"type:{{$v.columnType | Upper}};
+    {{$v.columnName | Pascal}} {{template "dataType" $v}} `json:"{{$v.columnName | Camel}}" gorm:"column:{{$v.columnName}};type:{{$v.columnType | Upper}};
     {{- if eq $v.columnKey "PRI"}}primaryKey;
     {{- else if eq $v.columnKey "UNI"}}uniqueIndex;
     {{- else if eq $v.columnKey "MUL"}}index;
@@ -24,4 +39,7 @@ type {{.table.tableName | Pascal}} struct {
     {{- else if IsNotNil $v.columnDefault}}default:{{$v.columnDefault}};
     {{- end -}}
     comment:{{$v.columnComment}}"` // {{$v.columnComment}}{{end}}
+{{range $k,$v := .table.columns}}
+{{- if Contains $v.columnName "_id"}}
+    {{ReplaceAll ($v.columnName | Pascal) "ID" ""}} {{ReplaceAll ($v.columnName | Pascal) "ID" ""}} `json:"{{ReplaceAll ($v.columnName | Camel) "ID" ""}}"`// {{ReplaceAll $v.columnComment "ID" ""}}{{end}}{{end}}
 }

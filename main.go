@@ -18,18 +18,22 @@ import (
 )
 
 type Config struct {
-	ModuleName  string // 模块名
-	TemplateDir string // 模板路径
-	DistDir     string // 生成代码路径
-	DB          struct {
+	ProjectName        string // 项目名
+	ProjectDescription string // 项目描述
+	ModuleName         string // 模块名
+	TemplateDir        string // 模板路径
+	DistDir            string // 生成代码路径
+	DB                 struct {
 		DriverName     string // 数据库驱动名，目前只支持mysql
 		DataSourceName string // 数据库连接配置
 	}
-	ReservedWords   []string // 语言保留字
-	BreakerWords    []string // 注释断开词
-	InitialismWords []string // 缩略词
+	SkinParseBySuffix []string // 文件名包含某个后缀名就不参与模板解析
+	ReservedWords     []string // 语言保留字
+	BreakerWords      []string // 注释断开词
+	InitialismWords   []string // 缩略词
 }
 
+var skinParseBySuffix []string
 var reservedWords []string
 var breakerWords []string
 var initialismWords []string
@@ -56,9 +60,12 @@ func main() {
 		}
 		break
 	}
+	projectName := config.ProjectName
+	projectDescription := config.ProjectDescription
 	moduleName := config.ModuleName
 	templateDir := config.TemplateDir
 	distDir := config.DistDir
+	skinParseBySuffix = config.SkinParseBySuffix
 	reservedWords = config.ReservedWords
 	breakerWords = config.BreakerWords
 	initialismWords = config.InitialismWords
@@ -176,12 +183,13 @@ func main() {
 		"Multiply": Multiply,
 		"Divide":   Divide,
 
-		"Contains":         strings.Contains, // str是否包含substr子字符串
-		"IsGE":             IsGE,             // a是否大于等于b
-		"IsNotNil":         IsNotNil,         // a是否不为null
-		"IsNumberDataType": IsNumberDataType, // str对应的sql类型是否是数字型
-		"IsStringDataType": IsStringDataType, // str对应的sql类型是否是字符串型
-		"IsReservedWord":   IsReservedWord,   // str对应的字符串是否是保留字中的字符串
+		"Contains":         strings.Contains,   // str是否包含substr子字符串
+		"ReplaceAll":       strings.ReplaceAll, // 在新的str中查找到所有oldStr，替换为newStr
+		"IsGE":             IsGE,               // a是否大于等于b
+		"IsNotNil":         IsNotNil,           // a是否不为null
+		"IsNumberDataType": IsNumberDataType,   // str对应的sql类型是否是数字型
+		"IsStringDataType": IsStringDataType,   // str对应的sql类型是否是字符串型
+		"IsReservedWord":   IsReservedWord,     // str对应的字符串是否是保留字中的字符串
 	}
 
 	for _, table := range tables {
@@ -195,6 +203,7 @@ func main() {
 			outputPath = strings.Replace(outputPath, templateDir, distDir, 1)
 			outputPath = strings.Replace(outputPath, ".gotemplate", "", 1)
 			outputPath = strings.Replace(outputPath, ".gotmpl", "", 1)
+			outputPath = strings.Replace(outputPath, ".gohtml", "", 1)
 			t := template.Must(template.New("path").Funcs(funcMap).Parse(outputPath))
 
 			wr := bytes.NewBuffer(nil)
@@ -210,8 +219,6 @@ func main() {
 				return nil
 			}
 
-			t2 := template.Must(template.New("content").Funcs(funcMap).Parse(string(data)))
-
 			if err = os.MkdirAll(outputFile[0:strings.LastIndex(outputFile, string(os.PathSeparator))], os.ModePerm); err != nil {
 				log.Fatal(err)
 				return err
@@ -223,7 +230,19 @@ func main() {
 				return err
 			}
 
-			if err = t2.Execute(file, map[string]interface{}{"table": table, "tables": tables, "moduleName": moduleName}); err != nil {
+			// 根据后缀名直接写入，不进行模板解析
+			for _, i := range skinParseBySuffix {
+				if strings.HasSuffix(templatePath, i) {
+					file.Write(data)
+					if err := file.Close(); err != nil {
+						log.Fatal(err)
+					}
+					return nil
+				}
+			}
+
+			t2 := template.Must(template.New("content").Funcs(funcMap).Parse(string(data)))
+			if err = t2.Execute(file, map[string]interface{}{"table": table, "tables": tables, "moduleName": moduleName, "projectName": projectName, "projectDescription": projectDescription}); err != nil {
 				log.Fatal(err)
 			}
 

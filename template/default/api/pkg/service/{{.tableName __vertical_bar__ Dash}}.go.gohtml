@@ -37,9 +37,9 @@ func Find{{.table.tableName | Pascal}}List({{.table.tableName | Camel}}Form dto.
     default:
     {{$.table.tableName | Camel}}Form.Sort = "{{$.table.tableName}}.id desc"
     {{range $k,$v := .table.columns -}}
-        case "{{$v.columnName | Pascal}}":
+        case "{{$v.columnName | Camel}}":
         {{$.table.tableName | Camel}}Form.Sort = "{{$.table.tableName}}.{{$v.columnName}}"
-        case "{{$v.columnName | Pascal}} desc":
+        case "{{$v.columnName | Camel}} desc":
         {{$.table.tableName | Camel}}Form.Sort = "{{$.table.tableName}}.{{$v.columnName}} desc"
     {{end -}}
     }

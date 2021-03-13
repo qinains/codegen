@@ -17,11 +17,11 @@ func NewRouter(router *gin.Engine, config *base.Config) {
     router.Static("/static", "./static")
     router.Static(config.File.WebRelativePath, config.File.WebUploadRoot) //文件访问
 {{range $k0,$table := .tables}}
-    router.POST("{{$table.tableName | Dash}}/create-{{$table.tableName | Dash}}", {{$table.tableName | LowerAll}}.Create{{$table.tableName | Pascal}}) // 创建{{$table.tableComment | Breaker}}
-    router.POST("{{$table.tableName | Dash}}/delete-{{$table.tableName | Dash}}", {{$table.tableName | LowerAll}}.Delete{{$table.tableName | Pascal}}) // 删除{{$table.tableComment | Breaker}}
-    router.POST("{{$table.tableName | Dash}}/update-{{$table.tableName | Dash}}", {{$table.tableName | LowerAll}}.Update{{$table.tableName | Pascal}}) // 更新{{$table.tableComment | Breaker}}
-    router.POST("{{$table.tableName | Dash}}/find-{{$table.tableName | Dash}}", {{$table.tableName | LowerAll}}.Find{{$table.tableName | Pascal}}) // {{$table.tableComment | Breaker}}详情
-    router.POST("{{$table.tableName | Dash}}/find-{{$table.tableName | Dash}}-list", {{$table.tableName | LowerAll}}.Find{{$table.tableName | Pascal}}List) // {{$table.tableComment | Breaker}}列表
+    router.POST("{{$table.tableName | Dash}}/create-{{$table.tableName | Dash}}", web.Create{{$table.tableName | Pascal}}) // 创建{{$table.tableComment | Breaker}}
+    router.POST("{{$table.tableName | Dash}}/delete-{{$table.tableName | Dash}}", web.Delete{{$table.tableName | Pascal}}) // 删除{{$table.tableComment | Breaker}}
+    router.POST("{{$table.tableName | Dash}}/update-{{$table.tableName | Dash}}", web.Update{{$table.tableName | Pascal}}) // 更新{{$table.tableComment | Breaker}}
+    router.POST("{{$table.tableName | Dash}}/find-{{$table.tableName | Dash}}", web.Find{{$table.tableName | Pascal}}) // {{$table.tableComment | Breaker}}详情
+    router.POST("{{$table.tableName | Dash}}/find-{{$table.tableName | Dash}}-list", web.Find{{$table.tableName | Pascal}}List) // {{$table.tableComment | Breaker}}列表
 {{end}}
 }
 
