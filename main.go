@@ -39,6 +39,7 @@ var reservedWords []string
 var breakerWords []string
 var initialismWords []string
 
+var flagDataSourceName = flag.String("dataSourceName", "", "指定数据库连接配置")
 var flagTable = flag.String("table", "", "指定生成的数据库表名")
 var flagTruncateDistBeforeGen = flag.Bool("truncateDistBeforeGen", false, "先清空目录，再生成代码")
 
@@ -81,6 +82,11 @@ func main() {
 		if err != nil {
 			log.Fatal(err)
 		}
+	}
+
+	if *flagDataSourceName != "" {
+		//fmt.Println("指定数据库连接配置")
+		config.DB.DataSourceName = *flagDataSourceName
 	}
 
 	ctx := context.Background()

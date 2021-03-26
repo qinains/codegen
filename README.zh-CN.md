@@ -125,11 +125,12 @@ IsReservedWord              str对应的字符串是否是保留字中的字符�
 大部分Go程序都是没有UI的，运行在纯命令行的模式下，该干什么全靠运行参数。 这里介绍下Go语言命令行程序和他们的参数。
 
 ```
+dataSourceName          指定数据库连接配置
 table                   指定生成的数据库表名
 truncateDistBeforeGen   先清空目录，再生成代码
 
 # 例子
-go run main.go -table=third_party_platform -truncateDistBeforeGen
+go run main.go -dataSourceName="root:root@tcp(127.0.0.1:3306)/wechat3rd?charset=utf8mb4&parseTime=True&loc=Local" -table=third_party_platform -truncateDistBeforeGen
 ```
 
 ### FAQ
