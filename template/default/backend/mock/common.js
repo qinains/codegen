@@ -53,8 +53,8 @@ module.exports = [
     url: '/user/info\.*',
     type: 'get',
     response: config => {
-      const {Token} = config.query
-      const info = users[Token]
+      const {token} = config.query
+      const info = users[token]
 
       // mock error
       if (!info) {

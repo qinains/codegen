@@ -15,7 +15,6 @@ import "{{$.moduleName}}/pkg/util"
 // {{.table.tableName | Pascal}}Form 表单:{{.table.tableComment}}
 type {{.table.tableName | Pascal}}Form struct {
     util.Request
-    Sort string // 排序: ID,ID desc,Sort,Sort desc
 {{- range $k,$v := .table.columns -}}
     {{- if or (Contains $v.columnName "id") (Contains $v.columnName "status")}}
         {{$v.columnName | Pascal}} {{template "dataType" $v}} // {{$v.columnComment}}

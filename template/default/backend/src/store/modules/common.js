@@ -1,5 +1,5 @@
-import {login, logout, getInfo, findDictItemList} from '@/api/common'
-import {getToken, setToken, removeToken} from '@/utils/auth'
+import {findDictItemList, getInfo, login, logout} from '@/api/common'
+import {getToken, removeToken, setToken} from '@/utils/auth'
 import {resetRouter} from '@/router'
 
 const getDefaultState = () => {
@@ -40,10 +40,10 @@ const actions = {
   login({commit}, userInfo) {
     const {username, password} = userInfo
     return new Promise((resolve, reject) => {
-      login({username: username.trim(), password: password}).then(response => {
+      login({loginName: username.trim(), password: password}).then(response => {
         const {data} = response
-        commit('SET_TOKEN', data.Token)
-        setToken(data.Token)
+        commit('SET_TOKEN', data.accessToken)
+        setToken(data.accessToken)
         resolve()
       }).catch(error => {
         reject(error)

@@ -8,7 +8,7 @@ import (
 {{- end}}
 )
 
-func NewRouter(router *gin.Engine, config *base.Config) {
+func NewRouter(router *gin.Engine, config *config.Config) {
     router.StaticFile("favicon.ico", "./favicon.ico")
     router.StaticFile("/", "./index.html")
     for k, v := range config.Static {

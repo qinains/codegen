@@ -15,9 +15,9 @@
           value-format="timestamp"
           clearable
           @change="handleFilter"/>
-        {{- else if Contains $v.columnName "status"}}
+        {{- else if (or (Contains $v.columnName "status") (Contains $v.columnName "type"))}}
         <el-select v-model{{if IsNumberDataType $v.dataType}}{{end}}="listQuery.{{$v.columnName | Camel}}" placeholder="{{$v.columnComment | Breaker}}" style="max-width: 80px" clearable @clear="listQuery.{{$v.columnName | Camel}}=undefined" @change="handleFilter">
-          <el-option v-for="item in {{$.table.tableName | Camel}}StatusDict" :key="item.ID" :label="item.title" :value="parseInt(item.value)" />
+          <el-option v-for="item in {{$.table.tableName | Camel}}{{$v.columnName | UpperFirst}}Dict" :key="item.ID" :label="item.title" :value="parseInt(item.value)" />
         </el-select>
         {{- else}}
         <el-input v-model{{if IsNumberDataType $v.dataType}}.number{{end}}="listQuery.{{$v.columnName | Camel}}" placeholder="{{$v.columnComment | Breaker}}" clearable{{if IsNumberDataType $v.dataType}} @clear="listQuery.{{$v.columnName | Camel}}=undefined"{{end}} style="max-width: 100px" @keyup.enter.native="handleFilter"/>
@@ -48,7 +48,7 @@
       @sort-change="sortChange"
       @selection-change="handleSelectionChange"
     >
-      <el-table-column align="center" type="selection" :fixed="device==='desktop'?'left':false" width="55"></el-table-column>
+      <el-table-column align="center" type="selection" :fixed="device === 'desktop' ? 'left' : false" width="55"></el-table-column>
       {{range $k,$v := .table.columns -}}
       <el-table-column label="{{if (or (eq $v.columnName "id")) }}ID{{else}}{{$v.columnComment | Breaker}}{{end}}" prop="{{$v.columnName | Camel}}"{{if or (eq $v.columnName "id") (Contains $v.columnName "sort")}} sortable="custom"{{end}} align="center"{{if Contains $v.columnName "_time"}} min-width="120"{{end}}>
         <template slot-scope="{row}">
@@ -58,15 +58,17 @@
           <el-image style="width: 60px; height: 60px" :src="row.{{$v.columnName | Camel}}" fit="contain" :lazy="true" :preview-src-list="[row.{{$v.columnName | Camel}}]"></el-image>
           {{- else if (or (Contains $v.columnName "file_url") (Contains $v.columnName "_url"))}}
           <el-link :href="row.{{$v.columnName | Camel}}" type="primary" target="_blank">{{`{{`}} row.{{$v.columnName | Camel}} {{`}}`}}</el-link>
-          {{- else if Contains $v.columnName "status"}}
-          <el-tag :type="row.{{$v.columnName | Camel}} | dictFilter({{$.table.tableName | Camel}}StatusDict,'tagType')">{{`{{`}} row.{{$v.columnName | Camel}} | dictFilter({{$.table.tableName | Camel}}StatusDict,'title') {{`}}`}}</el-tag>
+          {{- else if (or (Contains $v.columnName "status") (Contains $v.columnName "type"))}}
+          <el-tag :type="row.{{$v.columnName | Camel}} | dictFilter({{$.table.tableName | Camel}}{{$v.columnName | UpperFirst}}Dict, 'tagType')">
+            {{`{{`}} row.{{$v.columnName | Camel}} | dictFilter({{$.table.tableName | Camel}}{{$v.columnName | UpperFirst}}Dict,'title') {{`}}`}}
+          </el-tag>
           {{- else}}
-          <span>{{`{{`}}row.{{$v.columnName | Camel}}{{`}}`}}</span>
+          <span>{{`{{ `}}row.{{$v.columnName | Camel}}{{` }}`}}</span>
           {{- end}}
         </template>
       </el-table-column>
       {{end}}
-      <el-table-column label="操作" align="center" :fixed="device==='desktop'?'right':false" min-width="120">
+      <el-table-column label="操作" align="center" :fixed="device === 'desktop' ? 'right' : false" min-width="120">
         <template slot-scope="{row,$index}">
           <el-button type="primary" icon="el-icon-edit" size="mini" :plain="true" @click="handleUpdate(row)"></el-button>
           <el-button type="danger" icon="el-icon-delete" size="mini" :plain="true" @click="handleDelete(row,$index)"></el-button>
@@ -74,7 +76,7 @@
       </el-table-column>
     </el-table>
 
-    <pagination v-show="total>0" :total="total" :page.sync="listQuery.page" :limit.sync="listQuery.size" @pagination="getList"/>
+    <pagination v-show="total > 0" :total="total" :page.sync="listQuery.page" :limit.sync="listQuery.size" @pagination="getList"/>
 
     <el-dialog :title="textMap[dialogStatus]" :visible.sync="dialogFormVisible" :close-on-click-modal="false">
       <el-form ref="dataForm" :rules="rules" :model="temp" label-position="right" label-width="auto">
@@ -90,7 +92,7 @@
             name="file[]"
             :headers="{ 'X-TOKEN': $getAccessToken() }"
             :action="$getVueAppBaseAPI() + '/file/upload'"
-            :on-success="(response, file, fileList)=>{temp.{{$v.columnName | Camel}}= response.data.items[0].URL.indexOf('http')===0?response.data.items[0].URL:($getVueAppBaseAPI() + response.data.items[0].URL)}"
+            :on-success="(response, file, fileList)=>{temp.{{$v.columnName | Camel}}= response.data.items[0].URL.indexOf('http') === 0 ? response.data.items[0].URL : ($getVueAppBaseAPI() + response.data.items[0].URL)}"
             :on-remove="(file, fileList)=>{temp.{{$v.columnName | Camel}}=''}"
             :on-exceed="(file, fileList)=>{$message({message: '超出文件数量限制，请先删除文件', type: 'warning'})}"
             :limit="1"
@@ -109,7 +111,7 @@
             name="file[]"
             :headers="{ 'X-TOKEN': $getAccessToken() }"
             :action="$getVueAppBaseAPI() + '/file/upload'"
-            :on-success="(response, file, fileList)=>{temp.{{$v.columnName | Camel}}= response.data.items[0].URL.indexOf('http')===0?response.data.items[0].URL:($getVueAppBaseAPI() + response.data.items[0].URL)}"
+            :on-success="(response, file, fileList)=>{temp.{{$v.columnName | Camel}}= response.data.items[0].URL.indexOf('http') === 0 ? response.data.items[0].URL : ($getVueAppBaseAPI() + response.data.items[0].URL)}"
             :on-remove="(file, fileList)=>{temp.{{$v.columnName | Camel}}=''}"
             :on-exceed="(file, fileList)=>{$message({message: '超出文件数量限制，请先删除文件', type: 'warning'})}"
             :limit="1"
@@ -121,9 +123,9 @@
             <div class="el-upload__tip" slot="tip">文件大小不超过2MB</div>
           </el-upload>
         </el-form-item>
-        {{- else if Contains $v.columnName "status"}}
+        {{- else if (or (Contains $v.columnName "status") (Contains $v.columnName "type"))}}
         <el-form-item label="{{$v.columnComment | Breaker}}" prop="{{$v.columnName | Camel}}">
-          <el-radio v-model.number="temp.{{$v.columnName | Camel}}" v-for="item in {{$.table.tableName | Camel}}StatusDict" :key="item.ID" :label="parseInt(item.value)">{{"{{"}}item.title{{"}}"}}</el-radio>
+          <el-radio v-model.number="temp.{{$v.columnName | Camel}}" v-for="item in {{$.table.tableName | Camel}}{{$v.columnName | UpperFirst}}Dict" :key="item.ID" :label="parseInt(item.value)">{{"{{"}}item.title{{"}}"}}</el-radio>
         </el-form-item>
         {{- else if (or (Contains $v.columnName "intro") (Contains $v.columnName "description"))}}
         <el-form-item label="{{$v.columnComment | Breaker}}" prop="{{$v.columnName | Camel}}">
@@ -139,12 +141,12 @@
         </el-form-item>
         {{- end}}
         {{- end}}
-        <el-form-item v-if="dialogStatus==='create'" label="添加之后">
+        <el-form-item v-if="dialogStatus === 'create'" label="添加之后">
           <el-radio v-model="dialogNext" :label="10">关闭窗口</el-radio>
           <el-radio v-model="dialogNext" :label="20">继续添加</el-radio>
         </el-form-item>
         <el-form-item>
-          <el-button type="primary" @click="dialogStatus==='create'?createData():updateData()">
+          <el-button type="primary" @click="dialogStatus === 'create' ? createData() : updateData()">
             确定
           </el-button>
           <el-button @click="dialogFormVisible = false">
@@ -176,6 +178,7 @@
     data() {
       return {
         {{$.table.tableName | Camel}}StatusDict: [],
+        {{$.table.tableName | Camel}}TypeDict: [],
         tableKey: 0,
         ids: [],
         singleSelected: true,
@@ -220,6 +223,9 @@
       this.getList()
       this.$store.dispatch('common/getDict', '{{$.table.tableName | Camel}}Status').then((resp) => {
         this.{{$.table.tableName | Camel}}StatusDict = resp
+      })
+      this.$store.dispatch('common/getDict', '{{$.table.tableName | Camel}}Type').then((resp) => {
+        this.{{$.table.tableName | Camel}}TypeDict = resp
       })
     },
     methods: {
