@@ -85,9 +85,12 @@ func main() {
 
 	ctx := context.Background()
 	db, err := sql.Open(config.DB.DriverName, config.DB.DataSourceName)
+	if err != nil {
+		log.Fatal(err)
+	}
 
-	sql := "SELECT TABLE_NAME,TABLE_COMMENT FROM information_schema.TABLES WHERE table_schema=(SELECT DATABASE ()) AND table_type = 'BASE TABLE' order by TABLE_NAME"
-	rows, err := db.QueryContext(ctx, sql)
+	sqlQuery := "SELECT TABLE_NAME,TABLE_COMMENT FROM information_schema.TABLES WHERE table_schema=(SELECT DATABASE ()) AND table_type = 'BASE TABLE' order by TABLE_NAME"
+	rows, err := db.QueryContext(ctx, sqlQuery)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -124,7 +127,7 @@ func main() {
 	sql = "SELECT TABLE_NAME,COLUMN_NAME,COLUMN_DEFAULT,IS_NULLABLE,DATA_TYPE,COLUMN_TYPE,COLUMN_KEY,COLUMN_COMMENT,EXTRA,NUMERIC_PRECISION, NUMERIC_SCALE,DATETIME_PRECISION FROM information_schema.COLUMNS WHERE TABLE_NAME in (" + strings.Join(tablesStr, ",") + ") AND table_schema=(SELECT DATABASE ()) ORDER BY TABLE_NAME,ORDINAL_POSITION"
 	fmt.Println(sql)
 
-	rows, err = db.QueryContext(ctx, sql)
+	rows, err = db.QueryContext(ctx, sqlQuery)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -251,7 +254,11 @@ func main() {
 			// 根据后缀名直接写入，不进行模板解析
 			for _, i := range skinParseBySuffix {
 				if strings.HasSuffix(templatePath, i) {
-					file.Write(data)
+					_, err = file.Write(data)
+					if err != nil {
+						log.Fatal(err)
+					}
+
 					if err := file.Close(); err != nil {
 						log.Fatal(err)
 					}
@@ -425,9 +432,6 @@ func UpperInitialisms(s string) string {
 func Dash(s string) string {
 	return strings.ReplaceAll(Underscore(s), "_", "-")
 }
-func Humanize(s string) string {
-	return ""
-}
 
 func Upper(s string) string {
 	return strings.ToUpper(s)
@@ -446,21 +450,11 @@ func LowerAll(s string) string {
 }
 
 func UpperFirst(s string) string {
-	return strings.ToUpper(string(s[0])) + string(s[1:])
+	return strings.ToUpper(string(s[0])) + s[1:]
 }
 
 func LowerFirst(s string) string {
-	return strings.ToLower(string(s[0])) + string(s[1:])
-}
-
-// Pluralize returns string s in plural form.
-func Pluralize(s string) string {
-	return ""
-}
-
-// Singularize returns string s in singular form.
-func Singularize(s string) string {
-	return ""
+	return strings.ToLower(string(s[0])) + s[1:]
 }
 
 func IsUpper(c byte) bool {
