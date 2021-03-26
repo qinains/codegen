@@ -5,6 +5,7 @@ import (
 	"context"
 	"database/sql"
 	"encoding/json"
+	"flag"
 	"fmt"
 	"io/ioutil"
 	"log"
@@ -38,7 +39,11 @@ var reservedWords []string
 var breakerWords []string
 var initialismWords []string
 
+var flagTable = flag.String("table", "", "指定生成的数据库表名")
+var flagTruncateDistBeforeGen = flag.Bool("truncateDistBeforeGen", false, "先清空目录，再生成代码")
+
 func main() {
+	flag.Parse()
 	var config Config
 	configName := "configs"
 	if os.Getenv("CONFIGS_NAME") != "" {
@@ -70,6 +75,14 @@ func main() {
 	breakerWords = config.BreakerWords
 	initialismWords = config.InitialismWords
 
+	if *flagTruncateDistBeforeGen {
+		//fmt.Println("生成代码之前，先清空目录")
+		err := os.RemoveAll(distDir)
+		if err != nil {
+			log.Fatal(err)
+		}
+	}
+
 	ctx := context.Background()
 	db, err := sql.Open(config.DB.DriverName, config.DB.DataSourceName)
 
@@ -95,6 +108,11 @@ func main() {
 
 		table["tableName"] = tableName
 		table["tableComment"] = tableComment
+
+		// 指定生成的数据库表名
+		if *flagTable != "" && *flagTable != table["tableName"] {
+			continue
+		}
 
 		tables = append(tables, table)
 	}

@@ -110,6 +110,7 @@ Breaker                     取断点前的字符串, 如：创建时间，毫�
 ```
 
 函数
+
 ```
 Contains str substr         str是否包含substr子字符串
 IsGE a b                    a是否大于等于b
@@ -119,6 +120,18 @@ IsStringDataType str        str对应的sql类型是否是字符串
 IsReservedWord              str对应的字符串是否是保留字中的字符串
 ```
 
+### 命令行参数
+
+大部分Go程序都是没有UI的，运行在纯命令行的模式下，该干什么全靠运行参数。 这里介绍下Go语言命令行程序和他们的参数。
+
+```
+table                   指定生成的数据库表名
+truncateDistBeforeGen   先清空目录，再生成代码
+
+# 例子
+go run main.go -table=third_party_platform -truncateDistBeforeGen
+```
+
 ### FAQ
-1. ".vue" 文件也有 {{}} 模板变量，如何不解析这些变量
-将{{}}添加到{{\`\`}}中，比如将{{item.Name}}修改为{{\`{{item.Name}}\`}}
+
+1. ".vue" 文件也有 {{}} 模板变量，如何不解析这些变量 将{{}}添加到{{\`\`}}中，比如将{{item.Name}}修改为{{\`{{item.Name}}\`}}
