@@ -17,13 +17,13 @@ type {{.table.tableName | Pascal}}Form struct {
     util.Request
 {{- range $k,$v := .table.columns -}}
     {{- if or (Contains $v.columnName "id") (Contains $v.columnName "status")}}
-        {{$v.columnName | Pascal}} {{template "dataType" $v}} // {{$v.columnComment}}
-        {{$v.columnName | Pascal}}List []{{template "dataType" $v}} // {{$v.columnComment | Breaker}}列表
+        {{$v.columnName | Pascal}} {{template "dataType" $v}} `json:"{{$v.columnName | Camel}}"` // {{$v.columnComment}}
+        {{$v.columnName | Pascal}}List []{{template "dataType" $v}} `json:"{{$v.columnName | Camel}}List"` // {{$v.columnComment | Breaker}}列表
     {{- else if Contains $v.columnName "_time"}}
-        {{$v.columnName | Pascal}} []{{template "dataType" $v}} // {{$v.columnComment}}
+        {{$v.columnName | Pascal}} []{{template "dataType" $v}} `json:"{{$v.columnName | Camel}}"` // {{$v.columnComment}}
     {{- else if Contains $v.columnName "sort" -}}
     {{- else}}
-        {{$v.columnName | Pascal}} {{template "dataType" $v}} // {{$v.columnComment}}
+        {{$v.columnName | Pascal}} {{template "dataType" $v}} `json:"{{$v.columnName | Camel}}"` // {{$v.columnComment}}
     {{- end -}}
 {{end}}
 }
