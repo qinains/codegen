@@ -24,8 +24,7 @@ import (
 func Create{{.table.tableName | Pascal}}(c *gin.Context) {
     var {{.table.tableName | Camel}} *do.{{.table.tableName | Pascal}}
     if err := c.ShouldBind(&{{.table.tableName | Camel}}); err != nil {
-    // todo 优化输出
-    util.ErrorForm(c, err.Error())
+        util.Error(c, "获取参数 错误，请重新尝试", err.Error())
         return
     }
 
@@ -55,8 +54,7 @@ func Create{{.table.tableName | Pascal}}(c *gin.Context) {
 func Delete{{.table.tableName | Pascal}}(c *gin.Context) {
     var {{.table.tableName | Camel}}Form dto.{{.table.tableName | Pascal}}Form
     if err := c.ShouldBind(&{{.table.tableName | Camel}}Form); err != nil {
-        // todo 优化输出
-        util.ErrorForm(c, err.Error())
+        util.Error(c, "获取参数 错误，请重新尝试", err.Error())
         return
     }
 
@@ -82,8 +80,7 @@ func Delete{{.table.tableName | Pascal}}(c *gin.Context) {
 func Update{{.table.tableName | Pascal}}(c *gin.Context) {
     var {{.table.tableName | Camel}} *do.{{.table.tableName | Pascal}}
     if err := c.ShouldBind(&{{.table.tableName | Camel}}); err != nil {
-        // todo 优化输出
-        util.ErrorForm(c, err.Error())
+        util.Error(c, "获取参数 错误，请重新尝试", err.Error())
         return
     }
 
@@ -136,8 +133,7 @@ func Find{{.table.tableName | Pascal}}(c *gin.Context) {
 func Find{{.table.tableName | Pascal}}List(c *gin.Context) {
     var {{.table.tableName | Camel}}Form dto.{{.table.tableName | Pascal}}Form
     if err := c.ShouldBind(&{{.table.tableName | Camel}}Form); err != nil {
-        // todo 优化输出
-        util.ErrorForm(c, err.Error())
+        util.Error(c, "获取参数 错误，请重新尝试", err.Error())
         return
     }
 
