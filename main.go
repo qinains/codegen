@@ -9,11 +9,13 @@ import (
 	"fmt"
 	"io/ioutil"
 	"log"
+	"math/rand"
 	"os"
 	"path/filepath"
 	"strconv"
 	"strings"
 	"text/template"
+	"time"
 
 	_ "github.com/go-sql-driver/mysql"
 )
@@ -28,10 +30,12 @@ type Config struct {
 		DriverName     string // 数据库驱动名，目前只支持mysql
 		DataSourceName string // 数据库连接配置
 	}
-	SkinParseBySuffix []string // 文件名包含某个后缀名就不参与模板解析
-	ReservedWords     []string // 语言保留字
-	BreakerWords      []string // 注释断开词
-	InitialismWords   []string // 缩略词
+	Tables                []string // 指定生成的数据库表名数组
+	TruncateDistBeforeGen bool     // 先清空目录，再生成代码
+	SkinParseBySuffix     []string // 文件名包含某个后缀名就不参与模板解析
+	ReservedWords         []string // 语言保留字
+	BreakerWords          []string // 注释断开词
+	InitialismWords       []string // 缩略词
 }
 
 var skinParseBySuffix []string
@@ -40,7 +44,7 @@ var breakerWords []string
 var initialismWords []string
 
 var flagDataSourceName = flag.String("dataSourceName", "", "指定数据库连接配置")
-var flagTable = flag.String("table", "", "指定生成的数据库表名")
+var flagTables = flag.String("tables", "", "指定生成的数据库表名,用半角逗号(,)隔开")
 var flagTruncateDistBeforeGen = flag.Bool("truncateDistBeforeGen", false, "先清空目录，再生成代码")
 
 func main() {
@@ -76,7 +80,7 @@ func main() {
 	breakerWords = config.BreakerWords
 	initialismWords = config.InitialismWords
 
-	if *flagTruncateDistBeforeGen {
+	if *flagTruncateDistBeforeGen || config.TruncateDistBeforeGen {
 		//fmt.Println("生成代码之前，先清空目录")
 		err := os.RemoveAll(distDir)
 		if err != nil {
@@ -104,6 +108,10 @@ func main() {
 
 	tables := make([]map[string]interface{}, 0)
 
+	if *flagTables != "" {
+		config.Tables = append(config.Tables, strings.Split(*flagTables, ",")...)
+	}
+
 	for rows.Next() {
 		table := make(map[string]interface{})
 		var tableName, tableComment string
@@ -119,19 +127,51 @@ func main() {
 		table["tableComment"] = tableComment
 
 		// 指定生成的数据库表名
-		if *flagTable != "" && *flagTable != table["tableName"] {
-			continue
+		foundTable := false
+		if len(config.Tables) > 0 {
+			for _, v := range config.Tables {
+				if v == tableName {
+					foundTable = true
+					break
+				}
+			}
+		} else {
+			foundTable = true
 		}
 
-		tables = append(tables, table)
+		if foundTable {
+			tables = append(tables, table)
+		}
 	}
 
 	tablesStr := make([]string, 0)
 	for _, table := range tables {
 		tablesStr = append(tablesStr, "\""+table["tableName"].(string)+"\"")
 	}
-	sql = "SELECT TABLE_NAME,COLUMN_NAME,COLUMN_DEFAULT,IS_NULLABLE,DATA_TYPE,COLUMN_TYPE,COLUMN_KEY,COLUMN_COMMENT,EXTRA,NUMERIC_PRECISION, NUMERIC_SCALE,DATETIME_PRECISION FROM information_schema.COLUMNS WHERE TABLE_NAME in (" + strings.Join(tablesStr, ",") + ") AND table_schema=(SELECT DATABASE ()) ORDER BY TABLE_NAME,ORDINAL_POSITION"
-	fmt.Println(sql)
+	sqlQuery = `
+	SELECT
+	c.TABLE_NAME,c.COLUMN_NAME,c.COLUMN_DEFAULT,c.IS_NULLABLE,c.DATA_TYPE,c.COLUMN_TYPE,c.COLUMN_KEY,b.INDEX_NAMES COLUMN_KEY_NAME,c.COLUMN_COMMENT,c.EXTRA,c.NUMERIC_PRECISION, c.NUMERIC_SCALE,c.DATETIME_PRECISION
+FROM
+	information_schema.COLUMNS c
+	LEFT JOIN (SELECT
+	TABLE_SCHEMA,
+	TABLE_NAME,
+	COLUMN_NAME,
+	NON_UNIQUE,
+	GROUP_CONCAT( CASE WHEN NON_UNIQUE = 0 THEN CONCAT( INDEX_NAME, ",unique" ) ELSE INDEX_NAME END SEPARATOR ";" ) INDEX_NAMES 
+FROM
+	information_schema.STATISTICS 
+GROUP BY
+	TABLE_SCHEMA,TABLE_NAME,COLUMN_NAME) b ON c.TABLE_SCHEMA = b.TABLE_SCHEMA
+	AND c.TABLE_NAME=b.TABLE_NAME
+	AND c.COLUMN_NAME=b.COLUMN_NAME
+WHERE
+	c.TABLE_NAME IN (` + strings.Join(tablesStr, ",") + `) AND c.table_schema=(SELECT DATABASE ())
+ORDER BY
+	c.TABLE_NAME,
+	c.ORDINAL_POSITION
+	`
+	// fmt.Println(sqlQuery)
 
 	rows, err = db.QueryContext(ctx, sqlQuery)
 	if err != nil {
@@ -140,8 +180,8 @@ func main() {
 
 	for rows.Next() {
 		var tableName, columnName, columnKey, columnComment, extra, columnType, dataType, isNullable string
-		var columnDefault, numericPrecision, numericScale, datetimePrecision interface{}
-		if err := rows.Scan(&tableName, &columnName, &columnDefault, &isNullable, &dataType, &columnType, &columnKey, &columnComment, &extra, &numericPrecision, &numericScale, &datetimePrecision); err != nil {
+		var columnKeyName, columnDefault, numericPrecision, numericScale, datetimePrecision interface{}
+		if err := rows.Scan(&tableName, &columnName, &columnDefault, &isNullable, &dataType, &columnType, &columnKey, &columnKeyName, &columnComment, &extra, &numericPrecision, &numericScale, &datetimePrecision); err != nil {
 			log.Fatal(err)
 		}
 
@@ -166,6 +206,11 @@ func main() {
 					columns["columnDefault"] = nil
 				} else {
 					columns["columnDefault"] = string(columnDefault.([]byte))
+				}
+				if columnKeyName == nil {
+					columns["columnKeyName"] = nil
+				} else {
+					columns["columnKeyName"] = string(columnKeyName.([]byte))
 				}
 
 				if table["columns"] == nil {
@@ -210,6 +255,8 @@ func main() {
 		"Multiply": Multiply,
 		"Divide":   Divide,
 
+		"RandomString":     RandomString,       // 产生随机字符串
+		"ReJoin":           ReJoin,             // 重新拼接字符串
 		"Contains":         strings.Contains,   // str是否包含substr子字符串
 		"ReplaceAll":       strings.ReplaceAll, // 在新的str中查找到所有oldStr，替换为newStr
 		"IsGE":             IsGE,               // a是否大于等于b
@@ -226,8 +273,8 @@ func main() {
 				return nil
 			}
 
-			outputPath := strings.ReplaceAll(templatePath, "__vertical_bar__", "|")
-			outputPath = strings.Replace(outputPath, templateDir, distDir, 1)
+			outputPath := filepath.ToSlash(strings.ReplaceAll(templatePath, "__vertical_bar__", "|"))
+			outputPath = strings.Replace(outputPath, filepath.ToSlash(templateDir), filepath.ToSlash(distDir), 1)
 			outputPath = strings.Replace(outputPath, ".gotemplate", "", 1)
 			outputPath = strings.Replace(outputPath, ".gotmpl", "", 1)
 			outputPath = strings.Replace(outputPath, ".gohtml", "", 1)
@@ -238,7 +285,7 @@ func main() {
 				log.Fatal(err)
 				return err
 			}
-			outputFile := string(wr.Bytes())
+			outputFile := wr.String()
 
 			data, err := ioutil.ReadFile(templatePath)
 			if err != nil {
@@ -246,7 +293,7 @@ func main() {
 				return nil
 			}
 
-			if err = os.MkdirAll(outputFile[0:strings.LastIndex(outputFile, string(os.PathSeparator))], os.ModePerm); err != nil {
+			if err = os.MkdirAll(outputFile[0:strings.LastIndex(outputFile, "/")], os.ModePerm); err != nil {
 				log.Fatal(err)
 				return err
 			}
@@ -291,7 +338,8 @@ func main() {
 	if err := rows.Err(); err != nil {
 		log.Fatal(err)
 	}
-	fmt.Printf("%s ", tables)
+	// fmt.Printf("%s \n", tables)
+	fmt.Println("gen done!")
 }
 
 // IsNotNil 判断是否不为空
@@ -385,10 +433,10 @@ func PascalWithoutInitialisms(s string) string {
 	num := len(s) - 1
 	for i := 0; i <= num; i++ {
 		d := s[i]
-		if k == false && d >= 'A' && d <= 'Z' {
+		if !k && d >= 'A' && d <= 'Z' {
 			k = true
 		}
-		if d >= 'a' && d <= 'z' && (j || k == false) {
+		if d >= 'a' && d <= 'z' && (j || !k) {
 			d = d - 32
 			j = false
 			k = true
@@ -499,4 +547,38 @@ func Multiply(a int, b int) int {
 
 func Divide(a int, b int) int {
 	return a / b
+}
+
+// ReJoin 根据 oldSep 分割字符串，每个字段拼接前缀prefix和后缀suffix，再用 newSep 重新组合新的字段
+func ReJoin(s, oldSep, newSep, prefix, suffix string) string {
+	ss := strings.Split(s, oldSep)
+	var b strings.Builder
+	if l := len(ss); l > 0 {
+		b.Grow(l)
+		b.WriteString(prefix)
+		b.WriteString(ss[0])
+		for _, s := range ss[1:] {
+			b.WriteString(newSep)
+			b.WriteString(prefix)
+			b.WriteString(s)
+			b.WriteString(suffix)
+		}
+	} else {
+		b.WriteString(prefix)
+		b.WriteString(s)
+		b.WriteString(suffix)
+	}
+	return b.String()
+}
+
+// RandomString 生成长度为n的随机字符串
+func RandomString(n int) string {
+	rand := rand.New(rand.NewSource(time.Now().Unix()))
+	var letterRunes = []rune("0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ")
+	len := len(letterRunes)
+	b := make([]rune, n)
+	for i := range b {
+		b[i] = letterRunes[rand.Intn(len)]
+	}
+	return string(b)
 }

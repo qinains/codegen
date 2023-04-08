@@ -1,8 +1,11 @@
 # codegen是什么
+
 codegen是一款根据sql生成项目代码的工具
 
 ## 使用
+
 ### 直接使用
+
 ```
 git clone https://github.com/qinains/codegen.git
 cd codegen
@@ -13,6 +16,7 @@ go run main.go
 ```
 
 ### 在项目中使用
+
 ```
 go get -u github.com/qinains/codegen
 # 在项目中创建如 codegen/ 的文件夹，结构如下
@@ -30,11 +34,14 @@ codegen
 ```
 
 ## 功能特点
+
 1. 可对项目文件夹进行配置
 2. 可编写模板
 
 ## 配置
+
 配置文件位于 configs/configs.json 文件中，其中
+
 ```
 ProjectName         项目名，英文，比如 example
 ProjectDescription  项目描述
@@ -50,12 +57,15 @@ InitialismWords     通用字，将转化为大写，比如 id -> ID, ip -> IP
 ```
 
 ## 模板编写
+
 默认模板位于 template/default/ 文件夹中，可通过配置文件中的"TemplateDir"配置项修改为其他值
 
 ### 模板引擎说明
-参考 [https://golang.google.cn/pkg/text/template/](https://golang.google.cn/pkg/text/template/)
+
+参考 [https://golang.google.cn/text/template/](https://golang.google.cn/text/template/)
 
 ### 可用变量
+
 ```
 .projectName 项目名，英文
 .projectDescription 项目描述
@@ -82,28 +92,31 @@ InitialismWords     通用字，将转化为大写，比如 id -> ID, ip -> IP
 ```
 
 ### 文件夹编写说明
+
 因为Windows系统文件名中不能包含`|`字符，当遇到使用过滤器文件名的情况，用`__vertical_bar__`代替`|`
 
 ### 可使用过滤器和函数
+
 字符串过滤器
+
 ```
-Upper	                    都转大写 如：user_id -> USER_ID
+Upper                       都转大写 如：user_id -> USER_ID
 UpperFirst                  首字母转大写 如：userId -> UserId
 UpperAll                    删除断词符，所有都变为大写 如：user_id -> USERID
-Lower	                    都转小写 如：User_ID -> user_id
+Lower                       都转小写 如：User_ID -> user_id
 LowerFirst                  首字母转小写 如：UserId -> userId
 LowerAll                    删除断词符，所有都变为小写 如：user_id -> userid
 
 UpperInitialisms            特殊字符如ID、IP都全大写 如：user_id -> user_ID ; userId -> userID
-Camel	                    小驼峰写法，特殊字符如ID、IP都全大写 如：user_id -> userID ; id_card_no -> IDCardNo
-CamelWithoutInitialisms	    小驼峰写法，特殊字符如ID、IP不都全大写 如：user_id -> userId
-Pascal	                    大驼峰写法，特殊字符如ID、IP都全大写 如：user_id -> UserID
+Camel                       小驼峰写法，特殊字符如ID、IP都全大写 如：user_id -> userID ; id_card_no -> IDCardNo
+CamelWithoutInitialisms     小驼峰写法，特殊字符如ID、IP不都全大写 如：user_id -> userId
+Pascal                      大驼峰写法，特殊字符如ID、IP都全大写 如：user_id -> UserID
 PascalWithoutInitialisms    大驼峰写法，特殊字符如ID、IP不都全大写 如：user_id -> UserId
 
 Underscore                  转成下杆线 如：userID -> user_id
-Dash	                    转成横杠 如：user_id -> user-id ; userId -> user-id
+Dash                        转成横杠 如：user_id -> user-id ; userId -> user-id
 
-Title	                    空格间的单词首字母都是大写 如：user_id -> User_id ; user id -> User Id
+Title                       空格间的单词首字母都是大写 如：user_id -> User_id ; user id -> User Id
 ToTitle                     都转大写 如：user_id -> USER_ID ; user id -> USER ID
 
 Breaker                     取断点前的字符串, 如：创建时间，毫秒时间戳 -> 创建时间 ; 名称,英文无空格 -> 名称
@@ -112,12 +125,14 @@ Breaker                     取断点前的字符串, 如：创建时间，毫�
 函数
 
 ```
-Contains str substr         str是否包含substr子字符串
-IsGE a b                    a是否大于等于b
-IsNotNil a                  a是否不为null
-IsNumberDataType str        str对应的sql类型是否是数字型
-IsStringDataType str        str对应的sql类型是否是字符串
-IsReservedWord              str对应的字符串是否是保留字中的字符串
+RandomString n                              生成长度为n的随机字符串
+ReJoin s, oldSep, newSep, prefix, suffix    根据 oldSep 分割字符串 s ，每个字段拼接前缀 prefix 和后缀 suffix ，再用 newSep 重新组合新的字段
+Contains str substr                         str是否包含substr子字符串
+IsGE a b                                    a是否大于等于b
+IsNotNil a                                  a是否不为null
+IsNumberDataType str                        str对应的sql类型是否是数字型
+IsStringDataType str                        str对应的sql类型是否是字符串
+IsReservedWord                              str对应的字符串是否是保留字中的字符串
 ```
 
 ### 命令行参数
@@ -126,7 +141,7 @@ IsReservedWord              str对应的字符串是否是保留字中的字符�
 
 ```
 dataSourceName          指定数据库连接配置
-table                   指定生成的数据库表名
+tables                  指定生成的数据库表名,用半角逗号(,)隔开
 truncateDistBeforeGen   先清空目录，再生成代码
 
 # 例子
