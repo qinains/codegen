@@ -1,0 +1,43 @@
+{{define "dataType" -}}
+    {{if or (Contains .dataType "bigint") (eq .columnName "id") -}}int64
+    {{- else if Contains .columnName "is_"}}bool
+    {{- else if Contains .dataType "tinyint"}}int8
+    {{- else if Contains .dataType "int"}}int
+    {{- else if Contains .columnName "deleted_at"}}*time.Time
+    {{- else if Contains .dataType "timestamp"}}time.Time
+    {{- else if Contains .dataType "varchar"}}string
+    {{- else if Contains .dataType "decimal"}}{{if IsGE .numericPrecision 18}}float64{{else}}float32{{end}}
+    {{- else if Contains .dataType "text"}}string
+    {{- end}}
+{{- end -}}
+
+{{$importTime := false}}
+{{- range $k,$v := .table.columns}}
+    {{- if (and (eq $importTime false) (or (Contains $v.columnName "_at") (Contains $v.dataType "timestamp")))}}
+        {{- $importTime = true}}
+    {{- end }}
+{{- end -}}
+
+package do
+{{with $importTime}}
+import (
+    "time"
+)
+{{end}}
+
+// {{.table.tableName | Pascal}} {{.table.tableComment}}
+type {{.table.tableName | Pascal}} struct {
+{{- range $k,$v := .table.columns}}
+    {{$v.columnName | Pascal}} {{template "dataType" $v}} `json:"{{$v.columnName | Pascal}}" gorm:"column:{{$v.columnName}};type:{{$v.columnType | Upper}};
+    {{- if eq $v.columnKey "PRI"}}primaryKey;
+    {{- else if IsNotNil $v.columnKeyName}}{{ReJoin $v.columnKeyName ";" ";" "index:" ""}};
+    {{- end -}}
+    {{- if eq $v.extra "auto_increment"}}autoIncrement;{{end -}}
+    {{- if eq $v.isNullable "NO"}}not null;{{end -}}
+    {{- if eq $v.columnName "create_time"}}autoCreateTime:milli;default:0;
+    {{- else if eq $v.columnName "update_time"}}autoUpdateTime:milli;default:0;
+    {{- else if eq $v.columnDefault ""}}default:'{{$v.columnDefault}}';
+    {{- else if IsNotNil $v.columnDefault}}default:{{$v.columnDefault}};
+    {{- end -}}
+    comment:{{$v.columnComment}}"` // {{$v.columnComment}}{{end}}
+}

@@ -1,0 +1,59 @@
+POST http://localhost:3000/register HTTP/1.1
+content-type: application/json
+
+{
+    "CaptchaID": "kMuAJVnN8bfDK8aH87th",
+    "Code": "3k5a",
+    "Phone": "130123456787",
+    "LoginName": "admin7",
+    "Password": "admin"
+}
+
+###
+
+POST http://localhost:3000/captcha HTTP/1.1
+
+###
+POST http://localhost:3000/check-captcha HTTP/1.1
+content-type: application/json
+
+{
+    "CaptchaID": "0du6QZm0hRkjeXtHy0rn",
+    "Code": "wded"
+}
+###
+
+POST http://localhost:3000/login HTTP/1.1
+content-type: application/json
+Accept-Language: zh-CN,zh;q=0.9,en;q=0.8,en-GB;q=0.7,en-US;q=0.6
+
+{
+    "CaptchaID": "0du6QZm0hRkjeXtHy0rn",
+    "Code": "wded",
+    "LoginName": "admin",
+    "Password": "admin"
+}
+
+###
+POST http://localhost:3000/refresh-access-token HTTP/1.1
+content-type: application/json
+
+{
+    "AccessToken": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJVSUQiOjEsImV4cCI6MTY4MTAwOTIxOSwibmFtZSI6IiJ9.dDPwoNCo36z0wSVzyjOt9UyrRpNN7LbeOjQBTK0J0O8",
+    "RefreshToken": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJVSUQiOjEsImV4cCI6MTY4MzM0MjAxOSwiaXNzIjoicnQiLCJuYW1lIjoiIn0.LlOIU9Z8R8rxwfqYJmOz2llc_OYz593iYcX6HqF5PWE"
+}
+
+###
+
+###
+POST http://localhost:3000/user/create HTTP/1.1
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJleHAiOjE2ODA3NzE2NjIsIm5pY2tuYW1lIjoiIiwidXNlcklEIjoyMX0.3RGTrlDozwmQp04scwCFSOH281qDMFrowF9EOjt77j8
+content-type: application/json
+
+{
+    "CaptchaID": "Y8sF20qzx7KyYz0aNV6v",
+    "Code": "00w4"
+}
+
+
+###

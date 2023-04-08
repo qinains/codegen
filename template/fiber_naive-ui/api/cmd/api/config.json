@@ -1,0 +1,28 @@
+{
+    "isDeveloping": true,
+    "db": {
+        "driverName": "mysql",
+        "dataSourceName": "root:root@tcp(127.0.0.1:3306)/{{$.projectName | Underscore}}?charset=utf8mb4&parseTime=True&loc=Local",
+        "showSQL": true,
+        "singularTable": true,
+        "SQLLogFile": "sql.log"
+    },
+    "http": {
+        "port": 3000
+    },
+    "jwt": {
+        "key": "{{RandomString 64}}",
+        "contextKey": "user",
+        "authTableName": "user",
+        "accessTokenExpireIn": 259200,
+        "refreshTokenExpireIn": 2592000
+    },
+    "authz": {
+        "casbinRuleTable": "casbin_rule",
+        "model": "[request_definition]\nr = sub, obj, act\n\n[policy_definition]\np = sub, obj, act\n\n[role_definition]\ng = _, _\n\n[policy_effect]\ne = some(where (p.eft == allow))\n\n[matchers]\nm = g(r.sub, p.sub) && r.obj == p.obj && r.act == p.act || r.sub == \"21\""
+    },
+    "file": {
+        "webRelativePath": "/upload",
+        "webUploadRoot": "/upload"
+    }
+}

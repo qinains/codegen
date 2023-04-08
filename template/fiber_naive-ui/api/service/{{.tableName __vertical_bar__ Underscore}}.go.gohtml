@@ -1,0 +1,92 @@
+package service
+
+import (
+	"errors"
+	"strings"
+
+	"{{$.moduleName}}/core"
+	"{{$.moduleName}}/do"
+	"{{$.moduleName}}/dto"
+	"gorm.io/gorm"
+)
+
+type {{.table.tableName | Camel}}Service struct{}
+
+var {{.table.tableName | Pascal}}Service = &{{.table.tableName | Camel}}Service{}
+
+// Create{{.table.tableName | Pascal}} 创建{{.table.tableComment | Breaker}}
+func ({{.table.tableName | Camel}}Service *{{.table.tableName | Camel}}Service) Create({{.table.tableName | Camel}} *do.{{.table.tableName | Pascal}}) error {
+	result := core.DB.Create(&{{.table.tableName | Camel}})
+	if result.Error != nil && strings.Contains(result.Error.Error(), "Duplicate entry") {
+		return errors.New("{{.table.tableComment | Breaker}}已经存在")
+	}
+	return result.Error
+}
+
+// Update{{.table.tableName | Pascal}} 更新{{.table.tableComment | Breaker}}
+func ({{.table.tableName | Camel}}Service *{{.table.tableName | Camel}}Service) Update({{.table.tableName | Camel}} *do.{{.table.tableName | Pascal}}) (int64, error) {
+	result := core.DB.Save(&{{.table.tableName | Camel}})
+	return result.RowsAffected, result.Error
+}
+
+// Get{{.table.tableName | Pascal}} 获取{{.table.tableComment | Breaker}}详情
+func ({{.table.tableName | Camel}}Service *{{.table.tableName | Camel}}Service) Get(ID int64) (*dto.{{.table.tableName | Pascal}}Resp, error) {
+	var {{.table.tableName | Camel}} *dto.{{.table.tableName | Pascal}}Resp
+	result := core.DB.First(&{{.table.tableName | Camel}}, ID)
+	if result.Error != nil && result.Error == gorm.ErrRecordNotFound {
+		return nil, nil
+	}
+	return {{.table.tableName | Camel}}, result.Error
+}
+
+// Find{{.table.tableName | Pascal}} 获取{{.table.tableComment | Breaker}}列表
+func ({{.table.tableName | Camel}}Service *{{.table.tableName | Camel}}Service) Find({{.table.tableName | Camel}}Req dto.{{.table.tableName | Pascal}}Req) ({{.table.tableName | Camel}}List []*dto.{{.table.tableName | Pascal}}Resp, total int64, err error) {
+	sql := core.DB.Offset({{.table.tableName | Camel}}Req.Offset()).Limit({{.table.tableName | Camel}}Req.Size).Order({{.table.tableName | Camel}}Req.Sort)
+	switch {{.table.tableName | Camel}}Req.Sort {
+	default:
+    {{$.table.tableName | Camel}}Req.Sort = "{{$.table.tableName}}.id desc"
+    {{range $k,$v := .table.columns -}}
+        case "{{$v.columnName | Camel}}":
+        {{$.table.tableName | Camel}}Req.Sort = "{{$.table.tableName}}.{{$v.columnName}}"
+        case "{{$v.columnName | Camel}} desc":
+        {{$.table.tableName | Camel}}Req.Sort = "{{$.table.tableName}}.{{$v.columnName}} desc"
+    {{end -}}
+	}
+
+    {{- range $k,$v := .table.columns -}}
+        {{- if or (Contains $v.columnName "id") (Contains $v.columnName "status")}}
+            if {{$.table.tableName | Camel}}Req.{{$v.columnName | Pascal}} {{if IsStringDataType $v.dataType}}!= ""{{else}}> 0{{end}} {
+            sql = sql.Where("{{$.table.tableName}}.{{$v.columnName}} = ?", {{$.table.tableName | Camel}}Req.{{$v.columnName | Pascal}})
+            }
+            if len({{$.table.tableName | Camel}}Req.{{$v.columnName | Pascal}}List) > 1 {
+            sql = sql.Where("{{$.table.tableName}}.{{$v.columnName}} in (?)", {{$.table.tableName | Camel}}Req.{{$v.columnName | Pascal}}List)
+            }
+        {{- else if Contains .columnName "is_"}}
+            if {{$.table.tableName | Camel}}Req.{{$v.columnName | Pascal}} != nil {
+            sql = sql.Where("{{$.table.tableName}}.{{$v.columnName}} = ?", {{$.table.tableName | Camel}}Req.{{$v.columnName | Pascal}})
+            }
+        {{- else if Contains $v.columnName "_time"}}
+            if len({{$.table.tableName | Camel}}Req.{{$v.columnName | Pascal}}) > 1 {
+            sql = sql.Where("{{$.table.tableName}}.{{$v.columnName}} > ? and {{$.table.tableName}}.{{$v.columnName}} <= ? ", {{$.table.tableName | Camel}}Req.{{$v.columnName | Pascal}}[0], {{$.table.tableName | Camel}}Req.{{$v.columnName | Pascal}}[1])
+            }
+        {{- else if IsStringDataType $v.dataType}}
+            if {{$.table.tableName | Camel}}Req.{{$v.columnName | Pascal}} != "" {
+            sql = sql.Where("{{$.table.tableName}}.{{$v.columnName}} like ?", "%"+{{$.table.tableName | Camel}}Req.{{$v.columnName | Pascal}}+"%")
+            }
+        {{- else if Contains $v.columnName "sort" -}}
+        {{- else }}
+            if {{$.table.tableName | Camel}}Req.{{$v.columnName | Pascal}} >0 {
+            sql = sql.Where("{{$.table.tableName}}.{{$v.columnName}} = ?", {{$.table.tableName | Camel}}Req.{{$v.columnName | Pascal}})
+            }
+        {{- end -}}
+    {{end}}
+	result := sql.Model(&dto.{{.table.tableName | Pascal}}Resp{}).Find(&{{.table.tableName | Camel}}List).Offset(-1).Limit(-1).Count(&total)
+	err = result.Error
+	return
+}
+
+// Delete{{.table.tableName | Pascal}} 删除{{.table.tableComment | Breaker}}
+func ({{.table.tableName | Camel}}Service *{{.table.tableName | Camel}}Service) Delete(IDList []int64) (int64, error) {
+	result := core.DB.Delete(do.{{.table.tableName | Pascal}}{}, IDList)
+	return result.RowsAffected, result.Error
+}
