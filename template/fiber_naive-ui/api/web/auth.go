@@ -4,6 +4,7 @@ import (
 	"github.com/gofiber/fiber/v2"
 	"github.com/mojocn/base64Captcha"
 	"{{$.moduleName}}/core"
+	"{{$.moduleName}}/core/middleware"
 	"{{$.moduleName}}/dto"
 	"{{$.moduleName}}/service"
 )
@@ -14,8 +15,8 @@ import (
 // @Accept json
 // @Produce json
 // @Param json body dto.Register true "注册信息"
-// @Success 200 {object} core.Response{Data=dto.Token} "注册成功"
-// @Failure 400 {object} core.Response{Msg=string}
+// @Success 200 {object} core.Response{data=dto.Token} "注册成功"
+// @Failure 400 {object} core.Response{msg=string,data=[]core.ErrorResponse} "如果是业务异常，一般是msg显示异常值，data为null。如果是表单异常，一般msg为空字符串，data包含异常项"
 // @Router /register [post]
 func Register(c *fiber.Ctx) error {
 	register := &dto.Register{}
@@ -23,12 +24,22 @@ func Register(c *fiber.Ctx) error {
 		return core.ErrorForm(c, err.Error())
 	}
 
-	if err := core.Validate.Struct(register); err != nil {
-		return core.ErrorFormValidationErrors(c, core.Validate, err)
-	}
+	validate := core.NewValidate()
 
-	if !core.CaptchaStore.Verify(register.CaptchaID, register.Code, true) {
-		return core.ErrorBusiness(c, "验证码错误")
+	// validate.RegisterStructValidation(func(sl validator.StructLevel) {
+	// 	register := sl.Current().Interface().(dto.Register)
+	// 	auth, _ := service.AuthService.GetByPhoneOrLoginName(register.TenantID, register.Phone, register.LoginName)
+
+	// 	if auth.LoginName != "" {
+	// 		sl.ReportError(auth.LoginName, "LoginName", "LoginName", "dbUnique", auth.LoginName)
+	// 	}
+	// 	if auth.Phone != "" {
+	// 		sl.ReportError(auth.Phone, "Phone", "Phone", "dbUnique", auth.Phone)
+	// 	}
+	// }, register)
+
+	if err := validate.Struct(register); err != nil {
+		return core.ErrorFormValidationErrors(c, validate, err)
 	}
 
 	token, err := service.AuthService.Register(register)
@@ -44,8 +55,8 @@ func Register(c *fiber.Ctx) error {
 // @Accept json
 // @Produce json
 // @Param json body dto.Login true "登录信息"
-// @Success 200 {object} core.Response{Data=dto.Token} "token信息"q
-// @Failure 400 {object} core.Response{Msg=string}
+// @Success 200 {object} core.Response{data=dto.Token} "token信息"
+// @Failure 400 {object} core.Response{msg=string,data=[]core.ErrorResponse} "如果是业务异常，一般是msg显示异常值，data为null。如果是表单异常，一般msg为空字符串，data包含异常项"
 // @Router /login [post]
 func Login(c *fiber.Ctx) error {
 	login := &dto.Login{}
@@ -53,11 +64,10 @@ func Login(c *fiber.Ctx) error {
 		return core.ErrorForm(c, err.Error())
 	}
 
-	if err := core.Validate.Struct(login); err != nil {
-		return core.ErrorFormValidationErrors(c, core.Validate, err)
-	}
-	if !core.CaptchaStore.Verify(login.CaptchaID, login.Code, true) {
-		return core.ErrorBusiness(c, "验证码错误")
+	validate := core.NewValidate()
+
+	if err := validate.Struct(login); err != nil {
+		return core.ErrorFormValidationErrors(c, validate, err)
 	}
 
 	token, err := service.AuthService.Login(login)
@@ -68,14 +78,36 @@ func Login(c *fiber.Ctx) error {
 	return core.OK(c, token)
 }
 
+// GetAuth 获取用户详情
+// @Summary 获取用户详情
+// @Tags 认证
+// @Accept json
+// @Produce json
+// @Param Authorization header string true "Token信息" default(Bearer {AccessToken})
+// @Success 200 {object} core.Response{data=dto.AuthResp} "用户详情"
+// @Failure 400 {object} core.Response{msg=string,data=[]core.ErrorResponse} "如果是业务异常，一般是msg显示异常值，data为null。如果是表单异常，一般msg为空字符串，data包含异常项"
+// @Router /auth/info [get]
+func GetAuth(c *fiber.Ctx) error {
+	_, UID, _, err := middleware.GetByContextKey(c)
+	if err != nil {
+		return core.ErrorBusiness(c, err.Error())
+	}
+
+	auth, err := service.AuthService.Get(UID)
+	if err != nil {
+		return core.ErrorBusiness(c, err.Error())
+	}
+	return core.OK(c, &auth)
+}
+
 // RefreshAccessToken 续期AccessToken
 // @Summary 续期AccessToken
 // @Tags 认证
 // @Accept json
 // @Produce json
 // @Param json body dto.Token true "Token信息，必须包含RefreshToken"
-// @Success 200 {object} core.Response{Data=dto.Token} "Token信息"
-// @Failure 400 {object} core.Response{Msg=string}
+// @Success 200 {object} core.Response{data=dto.Token} "Token信息"
+// @Failure 400 {object} core.Response{msg=string,data=[]core.ErrorResponse} "如果是业务异常，一般是msg显示异常值，data为null。如果是表单异常，一般msg为空字符串，data包含异常项"
 // @Router /refresh-access-token [post]
 func RefreshAccessToken(c *fiber.Ctx) error {
 	var dtoToken dto.Token
@@ -97,8 +129,8 @@ func RefreshAccessToken(c *fiber.Ctx) error {
 // @Tags 认证
 // @Accept json
 // @Produce json
-// @Success 200 {object} core.Response{Data=dto.Captcha} "base64验证码"
-// @Failure 400 {object} core.Response{Msg=string}
+// @Success 200 {object} core.Response{data=dto.Captcha} "base64验证码"
+// @Failure 400 {object} core.Response{msg=string,data=[]core.ErrorResponse} "如果是业务异常，一般是msg显示异常值，data为null。如果是表单异常，一般msg为空字符串，data包含异常项"
 // @Router /captcha [post]
 func Captcha(c *fiber.Ctx) error {
 	driver := &base64Captcha.DriverString{
@@ -107,7 +139,7 @@ func Captcha(c *fiber.Ctx) error {
 		Width:           240,
 		ShowLineOptions: 2,
 		NoiseCount:      0,
-		Source:          "1234567890abcdefghijkmnpqrtuvw",
+		Source:          "1234567890abcdefghijkmnprtuvw",
 	}
 	captcha := base64Captcha.NewCaptcha(driver, core.CaptchaStore)
 	id, b64s, err := captcha.Generate()
@@ -126,8 +158,8 @@ func Captcha(c *fiber.Ctx) error {
 // @Accept json
 // @Produce json
 // @Param json body dto.Captcha true "验证码"
-// @Success 200 {object} core.Response{Data=bool} "验证结果"
-// @Failure 400 {object} core.Response{Msg=string}
+// @Success 200 {object} core.Response{data=bool} "验证结果"
+// @Failure 400 {object} core.Response{msg=string,data=[]core.ErrorResponse} "如果是业务异常，一般是msg显示异常值，data为null。如果是表单异常，一般msg为空字符串，data包含异常项"
 // @Router /check-captcha [post]
 func CheckCaptcha(c *fiber.Ctx) error {
 	var dtoCaptcha dto.Captcha

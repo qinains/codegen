@@ -18,8 +18,8 @@ import (
 // @Produce json
 // @Param Authorization header string true "Token信息" default(Bearer {AccessToken})
 // @Param json body do.{{.table.tableName | Pascal}} true "{{.table.tableComment | Breaker}}"
-// @Success 200 {object} core.Response{Data=do.{{.table.tableName | Pascal}}} "{{.table.tableComment | Breaker}}"
-// @Failure 400 {object} core.Response{Msg=string}
+// @Success 200 {object} core.Response{data=do.{{.table.tableName | Pascal}}} "{{.table.tableComment | Breaker}}"
+// @Failure 400 {object} core.Response{msg=string,data=[]core.ErrorResponse} "如果是业务异常，一般是msg显示异常值，data为null。如果是表单异常，一般msg为空字符串，data包含异常项"
 // @Router /{{.table.tableName | Dash}}/create [post]
 func Create{{.table.tableName | Pascal}}(c *fiber.Ctx) error {
 	var {{.table.tableName | Camel}} do.{{.table.tableName | Pascal}}
@@ -43,8 +43,8 @@ func Create{{.table.tableName | Pascal}}(c *fiber.Ctx) error {
 // @Produce json
 // @Param Authorization header string true "Token信息" default(Bearer {AccessToken})
 // @Param json body do.{{.table.tableName | Pascal}} true "{{.table.tableComment | Breaker}}"
-// @Success 200 {object} core.Response{Data=do.{{.table.tableName | Pascal}}} "{{.table.tableComment | Breaker}}"
-// @Failure 400 {object} core.Response{Msg=string}
+// @Success 200 {object} core.Response{data=do.{{.table.tableName | Pascal}}} "{{.table.tableComment | Breaker}}"
+// @Failure 400 {object} core.Response{msg=string,data=[]core.ErrorResponse} "如果是业务异常，一般是msg显示异常值，data为null。如果是表单异常，一般msg为空字符串，data包含异常项"
 // @Router /{{.table.tableName | Dash}}/update [post]
 func Update{{.table.tableName | Pascal}}(c *fiber.Ctx) error {
 	var {{.table.tableName | Camel}} do.{{.table.tableName | Pascal}}
@@ -68,8 +68,8 @@ func Update{{.table.tableName | Pascal}}(c *fiber.Ctx) error {
 // @Produce json
 // @Param Authorization header string true "Token信息" default(Bearer {AccessToken})
 // @Param json body dto.{{.table.tableName | Pascal}}Req true "{{.table.tableComment | Breaker}}"
-// @Success 200 {object} core.Response{Data=core.List{Items=[]dto.{{.table.tableName | Pascal}}Resp,Total=int64}} "{{.table.tableComment | Breaker}}结果"
-// @Failure 400 {object} core.Response{Msg=string}
+// @Success 200 {object} core.Response{data=core.List{items=[]dto.{{.table.tableName | Pascal}}Resp,total=int64}} "{{.table.tableComment | Breaker}}结果"
+// @Failure 400 {object} core.Response{msg=string,data=[]core.ErrorResponse} "如果是业务异常，一般是msg显示异常值，data为null。如果是表单异常，一般msg为空字符串，data包含异常项"
 // @Router /{{.table.tableName | Dash}} [post]
 func Find{{.table.tableName | Pascal}}(c *fiber.Ctx) error {
 	var {{.table.tableName | Camel}}Req dto.{{.table.tableName | Pascal}}Req
@@ -93,8 +93,8 @@ func Find{{.table.tableName | Pascal}}(c *fiber.Ctx) error {
 // @Produce json
 // @Param Authorization header string true "Token信息" default(Bearer {AccessToken})
 // @Param ID path int true "{{.table.tableComment | Breaker}}ID"
-// @Success 200 {object} core.Response{Data=dto.{{.table.tableName | Pascal}}Resp} "{{.table.tableComment | Breaker}}详情"
-// @Failure 400 {object} core.Response{Msg=string}
+// @Success 200 {object} core.Response{data=dto.{{.table.tableName | Pascal}}Resp} "{{.table.tableComment | Breaker}}详情"
+// @Failure 400 {object} core.Response{msg=string,data=[]core.ErrorResponse} "如果是业务异常，一般是msg显示异常值，data为null。如果是表单异常，一般msg为空字符串，data包含异常项"
 // @Router /{{.table.tableName | Dash}}/{ID} [get]
 func Get{{.table.tableName | Pascal}}(c *fiber.Ctx) error {
 	ID, _ := strconv.ParseInt(c.Params("ID"), 10, 64)
@@ -116,7 +116,7 @@ func Get{{.table.tableName | Pascal}}(c *fiber.Ctx) error {
 // @Param Authorization header string true "Token信息" default(Bearer {AccessToken})
 // @Param json body dto.{{.table.tableName | Pascal}}Req true "{{.table.tableComment | Breaker}}"
 // @Success 200 {object} core.Response
-// @Failure 400 {object} core.Response{Msg=string}
+// @Failure 400 {object} core.Response{msg=string,data=[]core.ErrorResponse} "如果是业务异常，一般是msg显示异常值，data为null。如果是表单异常，一般msg为空字符串，data包含异常项"
 // @Router /{{.table.tableName | Dash}}/delete [post]
 func Delete{{.table.tableName | Pascal}}(c *fiber.Ctx) error {
 	var {{.table.tableName | Camel}}Req dto.{{.table.tableName | Pascal}}Req

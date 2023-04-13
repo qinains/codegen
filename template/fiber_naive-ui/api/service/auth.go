@@ -82,3 +82,24 @@ func (authService *authService) RefreshAccessToken(token *dto.Token) (*dto.Token
 	token.AccessToken, token.RefreshToken, err = middleware.CreateToken(int64(claims["TID"].(float64)), int64(claims["UID"].(float64)), claims["name"].(string), true) //RefreshToken本身不能续期
 	return token, err
 }
+
+// GetByPhoneOrLoginName 根据手机号或登录名获取用户详情
+func (authService *authService) GetByPhoneOrLoginName(tenantID int64, phone, loginName string) (*dto.AuthResp, error) {
+	auth := &dto.AuthResp{}
+	result := core.DB.Where(&dto.AuthResp{TenantID: tenantID, LoginName: loginName}).Or(&dto.AuthResp{TenantID: tenantID, Phone: phone}).First(&auth)
+	return auth, result.Error
+}
+
+// Get 获取用户详情
+func (authService *authService) Get(ID int64) (*dto.AuthInfoResp, error) {
+	var auth *dto.AuthInfoResp
+	result := core.DB.First(&auth, ID)
+	if result.Error != nil && result.Error == gorm.ErrRecordNotFound {
+		return nil, nil
+	}
+	auth.Permissions = []string{"admin", "info"}
+	if auth.Nickname == "" {
+		auth.Nickname = auth.LoginName
+	}
+	return auth, result.Error
+}

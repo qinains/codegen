@@ -9,12 +9,12 @@ import (
 )
 
 func InitPolicy(enforcer *casbin.Enforcer) {
-	enforcer.AddPermissionForUser("1", "", "/user/create", "POST")
-	enforcer.AddPermissionForUser("1", "", "/menu", "POST")
-	enforcer.AddPermissionForUser("1", "", "/menu/:ID", "GET")
-	enforcer.AddRoleForUser("1", "root", "")
-	enforcer.AddRoleForUser("1", "admin", "")
-	enforcer.AddPolicy("1", "", "/user/info", "GET")
+	enforcer.AddPermissionForUser("1", "1", "/user/create", "POST")
+	enforcer.AddPermissionForUser("1", "1", "/menu", "POST")
+	enforcer.AddPermissionForUser("1", "1", "/menu/:ID", "GET")
+	enforcer.AddRoleForUser("1", "root", "1")
+	enforcer.AddRoleForUser("1", "admin", "1")
+	enforcer.AddPolicy("1", "1", "/user/info", "GET")
 	fmt.Println(enforcer.GetAllRoles())
 }
 

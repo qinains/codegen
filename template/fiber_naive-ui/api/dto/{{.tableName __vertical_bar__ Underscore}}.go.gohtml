@@ -18,13 +18,13 @@ type {{.table.tableName | Pascal}}Req struct {
     core.Request
 {{- range $k,$v := .table.columns -}}
     {{- if or (Contains $v.columnName "id") (Contains $v.columnName "status")}}
-        {{$v.columnName | Pascal}} {{template "dataType" $v}} `json:"{{$v.columnName | Pascal}}"` // {{$v.columnComment}}
-        {{$v.columnName | Pascal}}List []{{template "dataType" $v}} `json:"{{$v.columnName | Pascal}}List"` // {{$v.columnComment | Breaker}}列表
+        {{$v.columnName | Pascal}} {{template "dataType" $v}} `json:"{{$v.columnName | Camel}}"` // {{$v.columnComment}}
+        {{$v.columnName | Pascal}}List []{{template "dataType" $v}} `json:"{{$v.columnName | Camel}}List"` // {{$v.columnComment | Breaker}}列表
     {{- else if Contains $v.columnName "_time"}}
-        {{$v.columnName | Pascal}} []{{template "dataType" $v}} `json:"{{$v.columnName | Pascal}}"` // {{$v.columnComment}}
+        {{$v.columnName | Pascal}} []{{template "dataType" $v}} `json:"{{$v.columnName | Camel}}"` // {{$v.columnComment}}
     {{- else if Contains $v.columnName "sort" -}}
     {{- else}}
-        {{$v.columnName | Pascal}} {{template "dataType" $v}} `json:"{{$v.columnName | Pascal}}"` // {{$v.columnComment}}
+        {{$v.columnName | Pascal}} {{template "dataType" $v}} `json:"{{$v.columnName | Camel}}"` // {{$v.columnComment}}
     {{- end -}}
 {{end}}
 }
@@ -32,14 +32,14 @@ type {{.table.tableName | Pascal}}Req struct {
 // {{.table.tableName | Pascal}}Resp{{.table.tableComment}}返回:可根据需要增删改字段
 type {{.table.tableName | Pascal}}Resp struct {
 {{- range $k,$v := .table.columns -}}
-    {{$v.columnName | Pascal}} {{template "dataType" $v}} `json:"{{$v.columnName | Pascal}}" gorm:"column:{{$v.columnName}};"` // {{$v.columnComment}}
+    {{$v.columnName | Pascal}} {{template "dataType" $v}} `json:"{{$v.columnName | Camel}}" gorm:"column:{{$v.columnName}};"` // {{$v.columnComment}}
 {{end}}
 
 {{- range $k,$v := .table.columns -}}
     {{if Contains $v.columnName "parent_id"}}
-    {{ReplaceAll ($v.columnName | Pascal) "ID" ""}} {{ReplaceAll ($v.columnName | Pascal) "ParentID" ""}} *{{$.table.tableName | Pascal}}Resp `json:"{{ReplaceAll ($v.columnName | Pascal) "ID" ""}}"`// {{ReplaceAll $v.columnComment "ID" ""}}
+    {{ReplaceAll ($v.columnName | Pascal) "ID" ""}} {{ReplaceAll ($v.columnName | Pascal) "ParentID" ""}} *{{$.table.tableName | Pascal}}Resp `json:"{{ReplaceAll ($v.columnName | Camel) "ID" ""}}"`// {{ReplaceAll $v.columnComment "ID" ""}}
     {{- else if Contains $v.columnName "_id"}}
-    {{ReplaceAll ($v.columnName | Pascal) "ID" ""}} *{{ReplaceAll ($v.columnName | Pascal) "ID" ""}}Resp `json:"{{ReplaceAll ($v.columnName | Pascal) "ID" ""}}"`// {{ReplaceAll $v.columnComment "ID" ""}}
+    {{ReplaceAll ($v.columnName | Pascal) "ID" ""}} *{{ReplaceAll ($v.columnName | Pascal) "ID" ""}}Resp `json:"{{ReplaceAll ($v.columnName | Camel) "ID" ""}}"`// {{ReplaceAll $v.columnComment "ID" ""}}
     {{- end -}}
  {{end}}
 }

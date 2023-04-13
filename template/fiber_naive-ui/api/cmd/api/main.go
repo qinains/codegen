@@ -26,7 +26,7 @@ import (
 // @BasePath /
 //
 //go:generate go install github.com/swaggo/swag/cmd/swag
-//go:generate swag init --generalInfo cmd/api/main.go --dir ../../. --outputTypes json --output ../../docs --propertyStrategy pascalcase
+//go:generate swag init --generalInfo cmd/api/main.go --dir ../../. --outputTypes json --output ../../docs --propertyStrategy camelcase
 func main() {
 	viper.SetConfigName("config")
 	viper.SetConfigType("json")
@@ -62,7 +62,6 @@ func main() {
 	router.OnInit(app)
 
 	core.OnInitI18N()
-	core.OnInitValidate()
 	core.OnInitCaptchaStore()
 
 	middleware.OnInitAuthz(core.DB)

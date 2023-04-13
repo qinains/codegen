@@ -5,32 +5,28 @@ import (
 	"github.com/gofiber/fiber/v2"
 )
 
+// Code 参考HTTP状态码
 const (
-	CodeOK                = 20000
-	CodeErrorBusiness     = 30000
-	CodeErrorForm         = 40000
-	CodeErrorCaptcha      = 40001
-	CodeErrorUnauthorized = 40401
-	CodeErrorForbidden    = 40403
-	CodeErrorSystem       = 50000
-	CodeErrorToken        = 50008
-	CodeErrorTokenExpired = 50014
+	CodeOK                = 200 //正常返回
+	CodeErrorForm         = 400 //表单/业务错误。如果是业务异常，一般是msg显示异常值，data为null。如果是表单异常，一般msg为空字符串，data包含异常项
+	CodeErrorUnauthorized = 401 //当前请求需要用户验证，之后一般需要用户去登录
+	CodeErrorForbidden    = 403 //已进行身份验证，但无权限，一般需要用户拥有该权限
+	CodeErrorSystem       = 500 //系统错误
 )
 
 type Response struct {
-	Code int         // 错误码：20000正常,30000业务异常,40000表单异常,40001需要验证码,40403无权限,50000系统异常,50008Token异常,50014Token过期
-	Msg  string      // 错误信息
-	Data interface{} // 正常返回内容
+	Code int         `json:"code"` // 错误码：200正常,400表单/业务错误(如果是业务异常，一般是msg显示异常值，data为null。如果是表单异常，一般msg为空字符串，data包含异常项),401需要用户验证,403无权限,500系统异常
+	Msg  string      `json:"msg"`  // 错误信息
+	Data interface{} `json:"data"` // 正常返回内容
 }
 type ErrorResponse struct {
-	Field string //错误字段
-	Tag   string //错误标记
-	Value string //错误值
-	Error string //错误内容
+	Field string `json:"field"` //错误字段
+	Tag   string `json:"tag"`   //错误标记
+	Error string `json:"error"` //错误内容
 }
 type List struct {
-	Total int64       // 总页码
-	Items interface{} // 项目列表
+	Total int64       `json:"total"` // 总页码
+	Items interface{} `json:"items"` // 项目列表
 }
 
 func Resp(c *fiber.Ctx, code int, msg string, data interface{}) error {
@@ -45,8 +41,12 @@ func OKMsg(c *fiber.Ctx, msg string) error {
 	return c.JSON(Response{Code: CodeOK, Msg: msg})
 }
 
+func Error(c *fiber.Ctx, msg string, data interface{}) error {
+	return c.JSON(Response{Code: CodeErrorForm, Msg: msg, Data: data})
+}
+
 func ErrorBusiness(c *fiber.Ctx, msg string) error {
-	return c.JSON(Response{Code: CodeErrorBusiness, Msg: msg})
+	return c.JSON(Response{Code: CodeErrorForm, Msg: msg})
 }
 
 func ErrorForm(c *fiber.Ctx, data interface{}) error {
@@ -58,9 +58,8 @@ func ErrorFormValidationErrors(c *fiber.Ctx, validate *validator.Validate, err e
 	var errors []*ErrorResponse
 	for _, err := range err.(validator.ValidationErrors) {
 		var element ErrorResponse
-		element.Field = err.StructNamespace()
+		element.Field = err.StructField()
 		element.Tag = err.Tag()
-		element.Value = err.Param()
 		element.Error = err.Translate(trans)
 		errors = append(errors, &element)
 	}
@@ -71,6 +70,10 @@ func ErrorSystem(c *fiber.Ctx, err string) error {
 	return c.JSON(Response{Code: CodeErrorSystem, Msg: err})
 }
 
-func Error(c *fiber.Ctx, msg string, data interface{}) error {
-	return c.JSON(Response{Code: CodeErrorForm, Msg: msg, Data: data})
+func ErrorUnauthorized(c *fiber.Ctx, msg string, data interface{}) error {
+	return c.JSON(Response{Code: CodeErrorUnauthorized, Msg: msg, Data: data})
+}
+
+func ErrorForbidden(c *fiber.Ctx, msg string, data interface{}) error {
+	return c.JSON(Response{Code: CodeErrorForbidden, Msg: msg, Data: data})
 }

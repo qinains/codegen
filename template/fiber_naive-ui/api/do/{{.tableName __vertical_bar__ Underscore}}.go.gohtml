@@ -28,7 +28,7 @@ import (
 // {{.table.tableName | Pascal}} {{.table.tableComment}}
 type {{.table.tableName | Pascal}} struct {
 {{- range $k,$v := .table.columns}}
-    {{$v.columnName | Pascal}} {{template "dataType" $v}} `json:"{{$v.columnName | Pascal}}" gorm:"column:{{$v.columnName}};type:{{$v.columnType | Upper}};
+    {{$v.columnName | Pascal}} {{template "dataType" $v}} `json:"{{$v.columnName | Camel}}" gorm:"column:{{$v.columnName}};type:{{$v.columnType | Upper}};
     {{- if eq $v.columnKey "PRI"}}primaryKey;
     {{- else if IsNotNil $v.columnKeyName}}{{ReJoin $v.columnKeyName ";" ";" "index:" ""}};
     {{- end -}}

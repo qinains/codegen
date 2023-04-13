@@ -18,9 +18,9 @@ func JWT() fiber.Handler {
 		ContextKey: viper.GetString("jwt.contextKey"),
 		ErrorHandler: func(c *fiber.Ctx, err error) error {
 			if err.Error() == "Missing or malformed JWT" {
-				return core.ErrorSystem(c, "验证信息丢失")
+				return core.ErrorUnauthorized(c, "验证信息丢失", nil)
 			} else {
-				return core.ErrorSystem(c, "验证失败或过期")
+				return core.ErrorUnauthorized(c, "验证失败或过期", nil)
 			}
 		},
 	})
