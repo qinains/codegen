@@ -12,7 +12,7 @@ func NewValidate() *validator.Validate {
 
 	//解析struct字段中的label标签，放入Error中
 	validate.RegisterTagNameFunc(func(field reflect.StructField) string {
-		name := strings.SplitN(field.Tag.Get("label"), ",", 2)[0]
+		name := strings.SplitN(field.Tag.Get("json"), ",", 2)[0]
 		if name == "-" {
 			return ""
 		}

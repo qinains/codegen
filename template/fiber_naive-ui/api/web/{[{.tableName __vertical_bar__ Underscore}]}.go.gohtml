@@ -1,0 +1,134 @@
+package web
+
+import (
+	"strconv"
+
+	"github.com/gofiber/fiber/v2"
+	"{[{$.moduleName}]}/core"
+	"{[{$.moduleName}]}/do"
+	"{[{$.moduleName}]}/dto"
+	"{[{$.moduleName}]}/service"
+)
+
+// Create{[{.table.tableName | Pascal}]} 创建{[{.table.tableComment | Breaker}]}
+// @Summary 创建{[{.table.tableComment | Breaker}]}
+// @Tags {[{.table.tableComment | Breaker}]}
+// @Tags {[{.table.tableComment | Breaker}]}
+// @Accept json
+// @Produce json
+// @Param Authorization header string true "Token信息" default(Bearer {AccessToken})
+// @Param json body do.{[{.table.tableName | Pascal}]} true "{[{.table.tableComment | Breaker}]}"
+// @Success 200 {object} core.Response{data=do.{[{.table.tableName | Pascal}]}} "{[{.table.tableComment | Breaker}]}"
+// @Failure 400 {object} core.Response{msg=string,data=[]core.ErrorField} "如果是业务异常，一般是msg显示异常值，data为null。如果是表单异常，一般msg为空字符串，data包含异常项"
+// @Router /{[{.table.tableName | Dash}]}/create [post]
+func Create{[{.table.tableName | Pascal}]}(c *fiber.Ctx) error {
+	var {[{.table.tableName | Camel}]} do.{[{.table.tableName | Pascal}]}
+	if err := c.BodyParser(&{[{.table.tableName | Camel}]}); err != nil {
+		return core.ErrorForm(c, err.Error())
+	}
+
+	// todo 字段验证
+
+	if err := service.{[{.table.tableName | Pascal}]}Service.Create(&{[{.table.tableName | Camel}]}); err != nil {
+		return core.ErrorBusiness(c, err.Error())
+	}
+
+	return core.OK(c, {[{.table.tableName | Camel}]})
+}
+
+// Update{[{.table.tableName | Pascal}]} 更新{[{.table.tableComment | Breaker}]}
+// @Summary 更新{[{.table.tableComment | Breaker}]}
+// @Tags {[{.table.tableComment | Breaker}]}
+// @Accept json
+// @Produce json
+// @Param Authorization header string true "Token信息" default(Bearer {AccessToken})
+// @Param json body do.{[{.table.tableName | Pascal}]} true "{[{.table.tableComment | Breaker}]}"
+// @Success 200 {object} core.Response{data=do.{[{.table.tableName | Pascal}]}} "{[{.table.tableComment | Breaker}]}"
+// @Failure 400 {object} core.Response{msg=string,data=[]core.ErrorField} "如果是业务异常，一般是msg显示异常值，data为null。如果是表单异常，一般msg为空字符串，data包含异常项"
+// @Router /{[{.table.tableName | Dash}]}/update [post]
+func Update{[{.table.tableName | Pascal}]}(c *fiber.Ctx) error {
+	var {[{.table.tableName | Camel}]} do.{[{.table.tableName | Pascal}]}
+	if err := c.BodyParser(&{[{.table.tableName | Camel}]}); err != nil {
+		return core.ErrorForm(c, err.Error())
+	}
+
+	// todo 字段验证
+
+	if _, err := service.{[{.table.tableName | Pascal}]}Service.Update(&{[{.table.tableName | Camel}]}); err != nil {
+		return core.ErrorBusiness(c, err.Error())
+	}
+
+	return core.OK(c, {[{.table.tableName | Camel}]})
+}
+
+// Find{[{.table.tableName | Pascal}]} 获取{[{.table.tableComment | Breaker}]}列表
+// @Summary 获取{[{.table.tableComment | Breaker}]}列表
+// @Tags {[{.table.tableComment | Breaker}]}
+// @Accept json
+// @Produce json
+// @Param Authorization header string true "Token信息" default(Bearer {AccessToken})
+// @Param json body dto.{[{.table.tableName | Pascal}]}Req true "{[{.table.tableComment | Breaker}]}"
+// @Success 200 {object} core.Response{data=core.Items{list=[]dto.{[{.table.tableName | Pascal}]}Resp,total=int64}} "{[{.table.tableComment | Breaker}]}结果"
+// @Failure 400 {object} core.Response{msg=string,data=[]core.ErrorField} "如果是业务异常，一般是msg显示异常值，data为null。如果是表单异常，一般msg为空字符串，data包含异常项"
+// @Router /{[{.table.tableName | Dash}]} [post]
+func Find{[{.table.tableName | Pascal}]}(c *fiber.Ctx) error {
+	var {[{.table.tableName | Camel}]}Req dto.{[{.table.tableName | Pascal}]}Req
+	if err := c.BodyParser(&{[{.table.tableName | Camel}]}Req); err != nil {
+		return core.ErrorForm(c, err.Error())
+	}
+
+	// todo 字段验证
+
+	{[{.table.tableName | Camel}]}List, total, err := service.{[{.table.tableName | Pascal}]}Service.Find({[{.table.tableName | Camel}]}Req)
+	if err != nil {
+		return core.ErrorBusiness(c, err.Error())
+	}
+	return core.OK(c, core.Items{List: {[{.table.tableName | Camel}]}List, Total: total})
+}
+
+// Get{[{.table.tableName | Pascal}]} 获取{[{.table.tableComment | Breaker}]}详情
+// @Summary 获取{[{.table.tableComment | Breaker}]}详情
+// @Tags {[{.table.tableComment | Breaker}]}
+// @Accept json
+// @Produce json
+// @Param Authorization header string true "Token信息" default(Bearer {AccessToken})
+// @Param ID path int true "{[{.table.tableComment | Breaker}]}ID"
+// @Success 200 {object} core.Response{data=dto.{[{.table.tableName | Pascal}]}Resp} "{[{.table.tableComment | Breaker}]}详情"
+// @Failure 400 {object} core.Response{msg=string,data=[]core.ErrorField} "如果是业务异常，一般是msg显示异常值，data为null。如果是表单异常，一般msg为空字符串，data包含异常项"
+// @Router /{[{.table.tableName | Dash}]}/{ID} [get]
+func Get{[{.table.tableName | Pascal}]}(c *fiber.Ctx) error {
+	ID, _ := strconv.ParseInt(c.Params("ID"), 10, 64)
+
+	// todo 字段验证
+
+	{[{.table.tableName | Camel}]}, err := service.{[{.table.tableName | Pascal}]}Service.Get(ID)
+	if err != nil {
+		return core.ErrorBusiness(c, err.Error())
+	}
+	return core.OK(c, &{[{.table.tableName | Camel}]})
+}
+
+// Delete{[{.table.tableName | Pascal}]} 删除{[{.table.tableComment | Breaker}]}
+// @Summary 删除{[{.table.tableComment | Breaker}]}
+// @Tags {[{.table.tableComment | Breaker}]}
+// @Accept json
+// @Produce json
+// @Param Authorization header string true "Token信息" default(Bearer {AccessToken})
+// @Param json body dto.{[{.table.tableName | Pascal}]}Req true "{[{.table.tableComment | Breaker}]}"
+// @Success 200 {object} core.Response
+// @Failure 400 {object} core.Response{msg=string,data=[]core.ErrorField} "如果是业务异常，一般是msg显示异常值，data为null。如果是表单异常，一般msg为空字符串，data包含异常项"
+// @Router /{[{.table.tableName | Dash}]}/delete [post]
+func Delete{[{.table.tableName | Pascal}]}(c *fiber.Ctx) error {
+	var {[{.table.tableName | Camel}]}Req dto.{[{.table.tableName | Pascal}]}Req
+	if err := c.BodyParser(&{[{.table.tableName | Camel}]}Req); err != nil {
+		return core.ErrorForm(c, err.Error())
+	}
+
+	// todo 字段验证
+
+	if _, err := service.{[{.table.tableName | Pascal}]}Service.Delete({[{.table.tableName | Camel}]}Req.IDList); err != nil {
+		return core.ErrorBusiness(c, err.Error())
+	}
+
+	return core.OK(c, nil)
+}

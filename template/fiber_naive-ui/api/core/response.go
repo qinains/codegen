@@ -19,14 +19,16 @@ type Response struct {
 	Msg  string      `json:"msg"`  // 错误信息
 	Data interface{} `json:"data"` // 正常返回内容
 }
-type ErrorResponse struct {
+
+type ErrorField struct {
 	Field string `json:"field"` //错误字段
 	Tag   string `json:"tag"`   //错误标记
 	Error string `json:"error"` //错误内容
 }
-type List struct {
+
+type Items struct {
 	Total int64       `json:"total"` // 总页码
-	Items interface{} `json:"items"` // 项目列表
+	List  interface{} `json:"list"`  // 项目列表
 }
 
 func Resp(c *fiber.Ctx, code int, msg string, data interface{}) error {
@@ -55,10 +57,10 @@ func ErrorForm(c *fiber.Ctx, data interface{}) error {
 
 func ErrorFormValidationErrors(c *fiber.Ctx, validate *validator.Validate, err error) error {
 	trans := GetTranslator(validate, c.Get("accept-language"))
-	var errors []*ErrorResponse
+	var errors []*ErrorField
 	for _, err := range err.(validator.ValidationErrors) {
-		var element ErrorResponse
-		element.Field = err.StructField()
+		var element ErrorField
+		element.Field = err.Field()
 		element.Tag = err.Tag()
 		element.Error = err.Translate(trans)
 		errors = append(errors, &element)

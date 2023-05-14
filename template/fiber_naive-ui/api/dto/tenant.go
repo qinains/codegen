@@ -1,6 +1,6 @@
 package dto
 
-import "{{$.moduleName}}/core"
+import "{[{$.moduleName}]}/core"
 
 // TenantReq租户请求:可根据需要增删改字段
 type TenantReq struct {

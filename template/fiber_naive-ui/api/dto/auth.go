@@ -15,7 +15,6 @@ type Captcha struct {
 type Login struct {
 	Captcha
 	TenantID  int64  `json:"tenantID" label:"租户ID"`                                  //租户ID
-	Phone     string `json:"phone" validate:"required,min=3,max=64" label:"手机号"`     //手机号
 	LoginName string `json:"loginName" validate:"required,min=3,max=64" label:"登录名"` //登录名
 	Password  string `json:"password" validate:"required,min=4,max=64" label:"密码"`   //密码
 }
@@ -48,14 +47,24 @@ func (AuthResp) TableName() string {
 	return viper.GetString("jwt.authTableName")
 }
 
+type Permission struct {
+	ID    int64  `json:"ID"`               // 权限ID
+	Label string `json:"label" label:"标签"` // 标签
+	Value string `json:"value" label:"值"`  // 值
+}
+
+func (Permission) TableName() string {
+	return "menu"
+}
+
 // AuthInfoResp
 type AuthInfoResp struct {
-	ID          int64    `json:"ID"`                    //用户ID
-	TenantID    int64    `json:"tenantID"`              //租户ID
-	Phone       string   `json:"phone" label:"手机号码"`    // 手机号码
-	LoginName   string   `json:"loginName" label:"登录名"` // 登录名
-	Nickname    string   `json:"nickname" label:"昵称"`   // 昵称
-	Permissions []string `json:"permissions" gorm:"-"`  //权限
+	ID          int64         `json:"ID"`                                                                                                       //用户ID
+	TenantID    int64         `json:"tenantID"`                                                                                                 //租户ID
+	Phone       string        `json:"phone" label:"手机号码"`                                                                                       // 手机号码
+	LoginName   string        `json:"loginName" label:"登录名"`                                                                                    // 登录名
+	Nickname    string        `json:"nickname" label:"昵称"`                                                                                      // 昵称
+	Permissions *[]Permission `json:"permissions" gorm:"foreignkey:ID;references:ID;association_autoupdate:false;association_autocreate:false"` //权限
 }
 
 func (AuthInfoResp) TableName() string {

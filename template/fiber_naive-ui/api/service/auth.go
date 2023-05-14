@@ -8,10 +8,10 @@ import (
 	"github.com/spf13/viper"
 	"golang.org/x/crypto/bcrypt"
 	"gorm.io/gorm"
-	"{{$.moduleName}}/core"
-	"{{$.moduleName}}/core/middleware"
-	"{{$.moduleName}}/do"
-	"{{$.moduleName}}/dto"
+	"{[{$.moduleName}]}/core"
+	"{[{$.moduleName}]}/core/middleware"
+	"{[{$.moduleName}]}/do"
+	"{[{$.moduleName}]}/dto"
 )
 
 type authService struct{}
@@ -47,7 +47,7 @@ func (authService *authService) Register(register *dto.Register) (*dto.Token, er
 // Login 通过登录名查找用户详情
 func (authService *authService) Login(login *dto.Login) (*dto.Token, error) {
 	auth := &do.Auth{}
-	result := core.DB.Where("tenant_id =? and login_name = ?", login.TenantID, login.LoginName).First(&auth)
+	result := core.DB.Where(&dto.AuthResp{TenantID: login.TenantID, LoginName: login.LoginName}).Or(&dto.AuthResp{TenantID: login.TenantID, Phone: login.LoginName}).First(&auth)
 
 	if errors.Is(result.Error, gorm.ErrRecordNotFound) {
 		return nil, errors.New("账号或密码错误")
@@ -66,12 +66,12 @@ func (authService *authService) Login(login *dto.Login) (*dto.Token, error) {
 func (authService *authService) RefreshAccessToken(token *dto.Token) (*dto.Token, error) {
 	jwtToken := new(jwt.Token)
 	jwtToken, err := jwt.ParseWithClaims(token.RefreshToken, jwt.MapClaims{}, func(t *jwt.Token) (interface{}, error) {
-		return viper.GetString("jwt.key"), nil
+		return []byte(viper.GetString("jwt.key")), nil
 	})
 	if err != nil {
 		return nil, err
 	}
-	if err == nil && jwtToken.Valid {
+	if !jwtToken.Valid {
 		return nil, errors.New("RefreshToken过期")
 	}
 	claims := jwtToken.Claims.(jwt.MapClaims)
@@ -79,7 +79,7 @@ func (authService *authService) RefreshAccessToken(token *dto.Token) (*dto.Token
 		return nil, errors.New("请传入合法的RefreshToken")
 	}
 
-	token.AccessToken, token.RefreshToken, err = middleware.CreateToken(int64(claims["TID"].(float64)), int64(claims["UID"].(float64)), claims["name"].(string), true) //RefreshToken本身不能续期
+	token.AccessToken, _, err = middleware.CreateToken(int64(claims["TID"].(float64)), int64(claims["UID"].(float64)), claims["name"].(string), false) //RefreshToken本身不续期
 	return token, err
 }
 
@@ -97,7 +97,7 @@ func (authService *authService) Get(ID int64) (*dto.AuthInfoResp, error) {
 	if result.Error != nil && result.Error == gorm.ErrRecordNotFound {
 		return nil, nil
 	}
-	auth.Permissions = []string{"admin", "info"}
+	auth.Permissions = &[]dto.Permission{{Label: "主控台", Value: "dashboard_console"}, {Label: "监控页", Value: "dashboard_monitor"}, {Label: "工作台", Value: "dashboard_workplace"}, {Label: "基础列表", Value: "basic_list"}, {Label: "基础列表删除", Value: "basic_list_delete"}}
 	if auth.Nickname == "" {
 		auth.Nickname = auth.LoginName
 	}

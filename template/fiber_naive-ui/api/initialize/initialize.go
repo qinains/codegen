@@ -5,7 +5,7 @@ import (
 
 	"github.com/casbin/casbin/v2"
 	"gorm.io/gorm"
-	"{{$.moduleName}}/do"
+	"{[{$.moduleName}]}/do"
 )
 
 func InitPolicy(enforcer *casbin.Enforcer) {

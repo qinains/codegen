@@ -8,7 +8,7 @@ import (
 	"gorm.io/gorm"
 	"gorm.io/gorm/logger"
 	"gorm.io/gorm/schema"
-	"{{$.moduleName}}/initialize"
+	"{[{$.moduleName}]}/initialize"
 )
 
 var DB *gorm.DB

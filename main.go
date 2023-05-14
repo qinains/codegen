@@ -32,6 +32,7 @@ type Config struct {
 	}
 	Tables                []string // 指定生成的数据库表名数组
 	TruncateDistBeforeGen bool     // 先清空目录，再生成代码
+	Delims                []string // 指定标识符
 	SkinParseBySuffix     []string // 文件名包含某个后缀名就不参与模板解析
 	ReservedWords         []string // 语言保留字
 	BreakerWords          []string // 注释断开词
@@ -278,7 +279,7 @@ ORDER BY
 			outputPath = strings.Replace(outputPath, ".gotemplate", "", 1)
 			outputPath = strings.Replace(outputPath, ".gotmpl", "", 1)
 			outputPath = strings.Replace(outputPath, ".gohtml", "", 1)
-			t := template.Must(template.New("path").Funcs(funcMap).Parse(outputPath))
+			t := template.Must(template.New("path").Delims(config.Delims[0], config.Delims[1]).Funcs(funcMap).Parse(outputPath))
 
 			wr := bytes.NewBuffer(nil)
 			if err = t.Execute(wr, table); err != nil {
@@ -319,7 +320,7 @@ ORDER BY
 				}
 			}
 
-			t2 := template.Must(template.New("content").Funcs(funcMap).Parse(string(data)))
+			t2 := template.Must(template.New("content").Delims(config.Delims[0], config.Delims[1]).Funcs(funcMap).Parse(string(data)))
 			if err = t2.Execute(file, map[string]interface{}{"table": table, "tables": tables, "moduleName": moduleName, "projectName": projectName, "projectDescription": projectDescription}); err != nil {
 				log.Fatal(err)
 			}

@@ -4,8 +4,8 @@ import (
 	"strconv"
 
 	"github.com/gofiber/fiber/v2"
-	"{{$.moduleName}}/core"
-	"{{$.moduleName}}/initialize"
+	"{[{$.moduleName}]}/core"
+	"{[{$.moduleName}]}/initialize"
 
 	"github.com/casbin/casbin/v2"
 	"github.com/casbin/casbin/v2/log"

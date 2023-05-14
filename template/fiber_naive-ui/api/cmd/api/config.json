@@ -2,7 +2,7 @@
     "isDeveloping": true,
     "db": {
         "driverName": "mysql",
-        "dataSourceName": "root:root@tcp(127.0.0.1:3306)/{{$.projectName | Underscore}}?charset=utf8mb4&parseTime=True&loc=Local",
+        "dataSourceName": "root:root@tcp(127.0.0.1:3306)/{[{$.projectName | Underscore}]}?charset=utf8mb4&parseTime=True&loc=Local",
         "showSQL": true,
         "singularTable": true,
         "SQLLogFile": "sql.log"
@@ -11,7 +11,7 @@
         "port": 3000
     },
     "jwt": {
-        "key": "{{RandomString 64}}",
+        "key": "{[{RandomString 64}]}",
         "contextKey": "user",
         "authTableName": "user",
         "accessTokenExpireIn": 259200,
@@ -24,5 +24,19 @@
     "file": {
         "webRelativePath": "/upload",
         "webUploadRoot": "/upload"
+    },
+    "i18n": {
+        "zh": {
+            "code": "验证码",
+            "loginName": "登录名",
+            "password": "密码",
+            "phone": "手机号"
+        },
+        "zh_tw": {
+            "code": "驗證碼",
+            "loginName": "登錄名",
+            "password": "密碼",
+            "phone": "手機號"
+        }
     }
 }

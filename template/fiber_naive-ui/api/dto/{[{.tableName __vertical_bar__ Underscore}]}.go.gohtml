@@ -1,0 +1,52 @@
+{[{define "dataType" -}]}
+    {[{if Contains .dataType "bigint" -}]}int64
+    {[{- else if Contains .columnName "is_"}]}*bool
+    {[{- else if Contains .dataType "tinyint"}]}int8
+    {[{- else if Contains .dataType "int"}]}int
+    {[{- else if Contains .dataType "varchar"}]}string
+    {[{- else if Contains .dataType "decimal"}]}{[{if IsGE .numericPrecision 18}]}float64{[{else}]}float32{[{end}]}
+    {[{- else if Contains .dataType "text"}]}string
+    {[{- end}]}
+{[{- end -}]}
+package dto
+
+import "{[{$.moduleName}]}/core"
+
+
+// {[{.table.tableName | Pascal}]}Req{[{.table.tableComment}]}请求:可根据需要增删改字段
+type {[{.table.tableName | Pascal}]}Req struct {
+    core.Request
+{[{- range $k,$v := .table.columns -}]}
+    {[{- if or (Contains $v.columnName "id") (Contains $v.columnName "status")}]}
+        {[{$v.columnName | Pascal}]} {[{template "dataType" $v}]} `json:"{[{$v.columnName | Camel}]}"` // {[{$v.columnComment}]}
+        {[{$v.columnName | Pascal}]}List []{[{template "dataType" $v}]} `json:"{[{$v.columnName | Camel}]}List"` // {[{$v.columnComment | Breaker}]}列表
+    {[{- else if Contains $v.columnName "_time"}]}
+        {[{$v.columnName | Pascal}]} []{[{template "dataType" $v}]} `json:"{[{$v.columnName | Camel}]}"` // {[{$v.columnComment}]}
+    {[{- else if Contains $v.columnName "sort" -}]}
+    {[{- else}]}
+        {[{$v.columnName | Pascal}]} {[{template "dataType" $v}]} `json:"{[{$v.columnName | Camel}]}"` // {[{$v.columnComment}]}
+    {[{- end -}]}
+{[{end}]}
+}
+
+// {[{.table.tableName | Pascal}]}Resp{[{.table.tableComment}]}返回:可根据需要增删改字段
+type {[{.table.tableName | Pascal}]}Resp struct {
+{[{- range $k,$v := .table.columns -}]}
+    {[{$v.columnName | Pascal}]} {[{template "dataType" $v}]} `json:"{[{$v.columnName | Camel}]}" gorm:"column:{[{$v.columnName}]};"` // {[{$v.columnComment}]}
+{[{end}]}
+
+{[{- range $k,$v := .table.columns -}]}
+    {[{if Contains $v.columnName "parent_id"}]}
+    {[{ReplaceAll ($v.columnName | Pascal) "ID" ""}]} {[{ReplaceAll ($v.columnName | Pascal) "ParentID" ""}]} *{[{$.table.tableName | Pascal}]}Resp `json:"{[{ReplaceAll ($v.columnName | Camel) "ID" ""}]}"`// {[{ReplaceAll $v.columnComment "ID" ""}]}
+    {[{- else if Contains $v.columnName "_id"}]}
+    {[{ReplaceAll ($v.columnName | Pascal) "ID" ""}]} *{[{ReplaceAll ($v.columnName | Pascal) "ID" ""}]}Resp `json:"{[{ReplaceAll ($v.columnName | Camel) "ID" ""}]}"`// {[{ReplaceAll $v.columnComment "ID" ""}]}
+    {[{- end -}]}
+ {[{end}]}
+}
+
+func ({[{.table.tableName | Pascal}]}Resp) TableName() string {
+	return "{[{.table.tableName}]}"
+}
+
+
+// 可添加其他“请求”或“返回”的实体，建议以Req、Resp结尾

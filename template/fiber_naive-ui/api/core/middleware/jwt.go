@@ -8,7 +8,7 @@ import (
 	jwtware "github.com/gofiber/jwt/v2"
 	"github.com/golang-jwt/jwt/v4"
 	"github.com/spf13/viper"
-	"{{$.moduleName}}/core"
+	"{[{$.moduleName}]}/core"
 )
 
 // JWT 验证路由保护

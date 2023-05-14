@@ -2,8 +2,8 @@ package router
 
 import (
 	"github.com/gofiber/fiber/v2"
-	"{{$.moduleName}}/core/middleware"
-	"{{$.moduleName}}/web"
+	"{[{$.moduleName}]}/core/middleware"
+	"{[{$.moduleName}]}/web"
 )
 
 func initAuth(app *fiber.App) {

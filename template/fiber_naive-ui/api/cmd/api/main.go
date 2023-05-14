@@ -7,16 +7,17 @@ import (
 	"github.com/fsnotify/fsnotify"
 	"github.com/goccy/go-json"
 	"github.com/gofiber/fiber/v2"
+	"github.com/gofiber/fiber/v2/middleware/cors"
 	"github.com/gofiber/fiber/v2/middleware/recover"
 	"github.com/spf13/viper"
-	"{{$.moduleName}}/core"
-	"{{$.moduleName}}/core/middleware"
-	"{{$.moduleName}}/router"
+	"{[{$.moduleName}]}/core"
+	"{[{$.moduleName}]}/core/middleware"
+	"{[{$.moduleName}]}/router"
 )
 
-// @title {{$.projectName | Pascal}} App
+// @title {[{$.projectName | Pascal}]} App
 // @version 1.0
-// @description {{$.projectDescription}}
+// @description {[{$.projectDescription}]}
 // @termsOfService https://lninl.com/terms/
 // @contact.name qinains
 // @contact.email qinains@qq.com
@@ -57,7 +58,7 @@ func main() {
 			return c.Status(code).JSON(core.Response{Code: code, Msg: err.Error()})
 		},
 	})
-	app.Use(recover.New(recover.Config{EnableStackTrace: viper.GetBool("isDeveloping")}))
+	app.Use(recover.New(recover.Config{EnableStackTrace: viper.GetBool("isDeveloping")})).Use(cors.New())
 
 	router.OnInit(app)
 
